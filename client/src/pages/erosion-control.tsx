@@ -26,13 +26,13 @@ export default function ErosionControlPage() {
   ];
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground flex items-center">
-          <Mountain className="h-6 w-6 mr-2" />
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground flex items-center">
+          <Mountain className="h-5 w-5 md:h-6 md:w-6 mr-2" />
           Erosion Control
         </h1>
-        <p className="mt-2 text-muted-foreground">
+        <p className="text-sm md:text-base text-muted-foreground">
           Erosion and sediment control techniques and specifications
         </p>
       </div>
@@ -49,7 +49,7 @@ export default function ErosionControlPage() {
       </Tabs>
 
       {/* Recommendations Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="bg-card border border-border rounded-lg p-6 animate-pulse">
