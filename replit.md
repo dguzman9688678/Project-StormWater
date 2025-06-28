@@ -109,6 +109,7 @@ This is a comprehensive AI-powered stormwater solution system that automatically
 
 ## Recent Development Progress
 
+- **June 28, 2025 - Professional QSD/CPESC Enhancement**: Enhanced AI system to act as certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control) providing professional-grade analysis, regulatory compliance guidance, and consultant-level recommendations with implementation specifications
 - **June 28, 2025 - Manual Upload Control**: Added manual upload button that allows users to select files, add descriptions, and only trigger analysis when ready - no more automatic uploads interrupting workflow preparation
 - **June 28, 2025 - Description Integration**: Fixed chat system to properly include user descriptions along with uploaded images, ensuring Claude receives both visual content and written context for comprehensive analysis
 - **June 28, 2025 - Dual Upload Options**: Implemented upload buttons in both main section (manual control) and chat interface (quick uploads) for flexible workflow management
