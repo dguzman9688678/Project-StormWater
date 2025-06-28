@@ -7,6 +7,8 @@ import { DocumentProcessor } from "./services/document-processor";
 import { AIAnalyzer } from "./services/ai-analyzer";
 import { RecommendationGenerator } from "./services/recommendation-generator";
 import { DocumentExporter } from "./services/document-exporter";
+import { ChatService } from "./services/chat-service";
+import { WebSearchService } from "./services/web-search-service";
 import { insertDocumentSchema, insertAiAnalysisSchema } from "@shared/schema";
 
 const upload = multer({ 
@@ -18,6 +20,8 @@ const documentProcessor = new DocumentProcessor();
 const aiAnalyzer = new AIAnalyzer();
 const recommendationGenerator = new RecommendationGenerator();
 const documentExporter = new DocumentExporter();
+const chatService = new ChatService();
+const webSearchService = new WebSearchService();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize with template recommendations
@@ -348,6 +352,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Delete document error:', error);
       res.status(500).json({ error: "Failed to delete document" });
+    }
+  });
+
+  // Chat endpoint for interactive AI conversations
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { message } = req.body;
+      
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      const response = await chatService.processMessage(message);
+      res.json({ message: response });
+    } catch (error) {
+      console.error('Chat error:', error);
+      res.status(500).json({ error: "Failed to process chat message" });
+    }
+  });
+
+  // Image analysis endpoint
+  app.post("/api/analyze-image", upload.single('image'), async (req, res) => {
+    try {
+      const { message } = req.body;
+      
+      if (!req.file) {
+        return res.status(400).json({ error: "Image file is required" });
+      }
+
+      // Convert image to base64
+      const fs = await import('fs/promises');
+      const imageBuffer = await fs.readFile(req.file.path);
+      const base64Image = imageBuffer.toString('base64');
+
+      const analysis = await chatService.analyzeImage(base64Image, message);
+      
+      // Clean up uploaded file
+      await fs.unlink(req.file.path);
+      
+      res.json({ analysis });
+    } catch (error) {
+      console.error('Image analysis error:', error);
+      res.status(500).json({ error: "Failed to analyze image" });
+    }
+  });
+
+  // Web search endpoint for stormwater regulations
+  app.get("/api/web-search", async (req, res) => {
+    try {
+      const { q, location } = req.query;
+      
+      if (!q || typeof q !== 'string') {
+        return res.status(400).json({ error: "Search query is required" });
+      }
+
+      const results = await webSearchService.searchStormwaterRegulations(
+        q, 
+        location as string | undefined
+      );
+      
+      res.json({ results });
+    } catch (error) {
+      console.error('Web search error:', error);
+      res.status(500).json({ error: "Failed to perform web search" });
     }
   });
 

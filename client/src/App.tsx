@@ -1,9 +1,13 @@
+import { useState } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { MessageCircle } from "lucide-react";
 import { Layout } from "@/components/layout/layout";
+import { ChatWindow } from "@/components/chat-window";
 import Dashboard from "@/pages/dashboard";
 import QSDPage from "@/pages/qsd";
 import SWPPPPage from "@/pages/swppp";
@@ -29,11 +33,33 @@ function Router() {
 }
 
 function App() {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isChatMinimized, setIsChatMinimized] = useState(false);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Router />
+        
+        {/* Floating Chat Button */}
+        {!isChatOpen && (
+          <Button
+            onClick={() => setIsChatOpen(true)}
+            className="fixed bottom-4 right-4 h-12 w-12 rounded-full shadow-lg z-40"
+            size="sm"
+          >
+            <MessageCircle className="h-5 w-5" />
+          </Button>
+        )}
+
+        {/* Chat Window */}
+        <ChatWindow
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          onMinimize={() => setIsChatMinimized(!isChatMinimized)}
+          isMinimized={isChatMinimized}
+        />
       </TooltipProvider>
     </QueryClientProvider>
   );

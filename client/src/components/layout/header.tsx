@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Search, Upload } from "lucide-react";
+import { Search, Upload, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UploadModal } from "@/components/upload-modal";
+import { ImageAnalyzer } from "@/components/image-analyzer";
 import { SearchResults } from "@/components/search-results";
 import { useSearch } from "@/hooks/use-search";
 
 export function Header() {
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showImageAnalyzer, setShowImageAnalyzer] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const { query, setQuery, results, isLoading } = useSearch();
 
@@ -61,10 +63,14 @@ export function Header() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
               <Button onClick={() => setShowUploadModal(true)}>
                 <Upload className="h-4 w-4 mr-2" />
                 Upload Document
+              </Button>
+              <Button onClick={() => setShowImageAnalyzer(true)} variant="outline">
+                <Camera className="h-4 w-4 mr-2" />
+                Analyze Image
               </Button>
               <div className="text-xs text-muted-foreground">© Daniel Guzman</div>
             </div>
@@ -75,6 +81,11 @@ export function Header() {
       <UploadModal 
         isOpen={showUploadModal} 
         onClose={() => setShowUploadModal(false)} 
+      />
+      
+      <ImageAnalyzer
+        isOpen={showImageAnalyzer}
+        onClose={() => setShowImageAnalyzer(false)}
       />
     </>
   );
