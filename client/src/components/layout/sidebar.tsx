@@ -18,7 +18,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const navigation = [
   { name: 'Instant Analysis', href: '/', icon: Brain },
-  { name: 'Generated Documents', href: '/recommendations', icon: Award },
   { name: 'Source Library', href: '/documents', icon: FileText },
   { name: 'System Overview', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Admin', href: '/admin', icon: Lock },
