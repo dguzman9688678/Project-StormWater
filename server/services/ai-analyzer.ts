@@ -68,13 +68,30 @@ Provide detailed, practical, and actionable engineering recommendations based on
   }
 
   private buildAnalysisPrompt(document: Document, query?: string): string {
-    const basePrompt = `
+    // Check if this is an image file
+    const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(document.originalName);
+    
+    const basePrompt = isImage ? `
+As a specialized stormwater engineering expert, analyze this site image and provide practical engineering guidance:
+
+**Image Information:**
+- Filename: ${document.originalName}
+- Category: ${document.category}
+- Description: ${document.content}
+
+**Visual Analysis Instructions:**
+Analyze this stormwater engineering site photo for:
+- Current site conditions and drainage patterns
+- Existing erosion issues or sediment buildup
+- Installed BMPs and their effectiveness
+- Areas requiring immediate attention
+- Specific engineering recommendations with calculations` : `
 As a specialized stormwater engineering expert, analyze this document and provide practical engineering guidance:
 
 **Document Information:**
 - Title: ${document.originalName}
 - Category: ${document.category}
-- Content: ${document.content.substring(0, 4000)}${document.content.length > 4000 ? '...' : ''}
+- Content: ${document.content.substring(0, 4000)}${document.content.length > 4000 ? '...' : ''}`;
 
 **Analysis Required:**
 1. **Technical Analysis**: Identify key stormwater engineering concepts, regulations, and requirements

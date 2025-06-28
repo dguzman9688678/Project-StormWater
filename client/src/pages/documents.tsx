@@ -67,13 +67,7 @@ export default function DocumentsPage() {
   };
 
   const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'qsd': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'swppp': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'erosion': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
-      case 'regulatory': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
-    }
+    return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
   };
 
   const handleDownload = (documentId: number, format: string, includeRecommendations = false, includeAnalyses = false) => {
@@ -110,12 +104,8 @@ export default function DocumentsPage() {
             <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
-            <SelectItem value="qsd">Developer Guidelines</SelectItem>
-            <SelectItem value="swppp">SWPPP Documentation</SelectItem>
-            <SelectItem value="erosion">Erosion Control</SelectItem>
-            <SelectItem value="regulatory">Regulatory Requirements</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
+            <SelectItem value="all">All documents</SelectItem>
+            <SelectItem value="stormwater">Stormwater Engineering</SelectItem>
           </SelectContent>
         </Select>
       </div>

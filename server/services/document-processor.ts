@@ -234,7 +234,7 @@ Modified: ${stats.mtime.toLocaleString()}
 This image file has been uploaded and is available for AI visual analysis.
 The image can be processed for engineering diagrams, site photos, technical drawings, or other visual content relevant to stormwater management.`;
     } catch (error) {
-      throw new Error(`Failed to process image file: ${error.message}`);
+      throw new Error(`Failed to process image file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -254,7 +254,7 @@ The image can be processed for engineering diagrams, site photos, technical draw
       
       return this.cleanExtractedText(textContent);
     } catch (error) {
-      throw new Error(`Failed to process HTML file: ${error.message}`);
+      throw new Error(`Failed to process HTML file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -273,7 +273,7 @@ The image can be processed for engineering diagrams, site photos, technical draw
       
       return this.cleanExtractedText(textContent);
     } catch (error) {
-      throw new Error(`Failed to process Markdown file: ${error.message}`);
+      throw new Error(`Failed to process Markdown file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -282,7 +282,7 @@ The image can be processed for engineering diagrams, site photos, technical draw
       const logContent = await fs.readFile(filePath, 'utf-8');
       return this.cleanExtractedText(logContent);
     } catch (error) {
-      throw new Error(`Failed to process log file: ${error.message}`);
+      throw new Error(`Failed to process log file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

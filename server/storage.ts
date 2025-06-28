@@ -355,7 +355,7 @@ export class DatabaseStorage implements IStorage {
         documentId: analysis.documentId,
         query: analysis.query,
         analysis: analysis.analysis,
-        insights: JSON.stringify(analysis.insights || [])
+        insights: Array.isArray(analysis.insights) ? analysis.insights : (analysis.insights ? [analysis.insights] : [])
       };
       
       const [aiAnalysis] = await db
