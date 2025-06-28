@@ -35,17 +35,70 @@ export class AIAnalyzer {
     }
 
     try {
+      // Get all documents from storage to use as reference context
+      const { storage } = await import('../storage');
+      const allDocuments = await storage.getAllDocuments();
+      
       const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(document.originalName);
       
       if (isImage) {
-        return await this.analyzeImageDocument(document, query);
+        return await this.analyzeImageWithContext(document, allDocuments, query);
       } else {
-        return await this.analyzeTextDocument(document, query);
+        return await this.analyzeDocumentWithContext(document, allDocuments, query);
       }
     } catch (error) {
       console.error('AI analysis failed:', error);
       return this.generateFallbackAnalysis(document, query);
     }
+  }
+
+  private async analyzeImageWithContext(document: Document, allDocuments: Document[], query?: string): Promise<AnalysisResult> {
+    // Build context from all reference documents
+    const referenceContext = this.buildReferenceContext(allDocuments);
+    
+    const prompt = `As a specialized stormwater engineering expert, analyze this construction site image by referencing the comprehensive document library below:
+
+**REFERENCE DOCUMENT LIBRARY:**
+${referenceContext}
+
+**CURRENT IMAGE TO ANALYZE:**
+- Filename: ${document.originalName}
+- Category: ${document.category}
+- Site Description: ${document.content}
+
+**COMPREHENSIVE ANALYSIS INSTRUCTIONS:**
+Cross-reference this image against ALL documents in the library to identify every possible stormwater issue. Use the reference documents to:
+
+1. **Identify ALL Issues**: Compare site conditions against standards, regulations, and best practices from the document library
+2. **Reference Violations**: Cite specific violations of codes, standards, or procedures from uploaded documents
+3. **Comprehensive Solutions**: Provide solutions that reference specific sections, formulas, and requirements from the library
+4. **Regulatory Compliance**: Ensure all recommendations comply with regulations found in the reference documents
+5. **Cost Analysis**: Use pricing and material data from the library where available
+
+${query ? `**Specific Query**: ${query}` : ''}
+
+**Format your response as:**
+ANALYSIS: [Comprehensive analysis referencing specific documents and sections]
+
+INSIGHTS: [Key insights with document citations]
+
+RECOMMENDATIONS:
+STORMWATER: [Title] - [Detailed recommendation with specific document references, calculations, and regulatory citations]`;
+
+    const response = await this.anthropic!.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4000,
+      system: `You are Claude, a specialized stormwater engineering AI with access to a comprehensive reference library. Always cite specific documents, sections, and standards from the provided library when making recommendations.`,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+    });
+
+    const analysisText = response.content[0].type === 'text' ? response.content[0].text : '';
+    return this.parseAnalysisResponse(analysisText, document);
   }
 
   private async analyzeImageDocument(document: Document, query?: string): Promise<AnalysisResult> {
@@ -100,6 +153,75 @@ STORMWATER: [Title] - [Detailed recommendation with engineering specifications]`
       console.error('Image analysis failed:', error);
       return this.generateFallbackAnalysis(document, query);
     }
+  }
+
+  private async analyzeDocumentWithContext(document: Document, allDocuments: Document[], query?: string): Promise<AnalysisResult> {
+    // Build context from all reference documents
+    const referenceContext = this.buildReferenceContext(allDocuments);
+    
+    const prompt = `As a specialized stormwater engineering expert, analyze this document by cross-referencing the comprehensive document library below:
+
+**REFERENCE DOCUMENT LIBRARY:**
+${referenceContext}
+
+**CURRENT DOCUMENT TO ANALYZE:**
+- Title: ${document.originalName}
+- Category: ${document.category}
+- Content: ${document.content.substring(0, 3000)}${document.content.length > 3000 ? '...' : ''}
+
+**COMPREHENSIVE ANALYSIS INSTRUCTIONS:**
+Cross-reference this document against ALL documents in the library to identify every possible stormwater issue and solution. Use the reference documents to:
+
+1. **Identify ALL Issues**: Compare document content against standards, regulations, and best practices from the document library
+2. **Reference Violations**: Cite specific violations of codes, standards, or procedures from uploaded documents
+3. **Comprehensive Solutions**: Provide solutions that reference specific sections, formulas, and requirements from the library
+4. **Regulatory Compliance**: Ensure all recommendations comply with regulations found in the reference documents
+5. **Cross-Document Analysis**: Identify patterns, conflicts, or synergies between this document and others in the library
+6. **Cost and Material Analysis**: Use pricing and material data from the library where available
+
+${query ? `**Specific Query**: ${query}` : ''}
+
+**Format your response as:**
+ANALYSIS: [Comprehensive analysis referencing specific documents, sections, and standards]
+
+INSIGHTS: [Key insights with document citations and cross-references]
+
+RECOMMENDATIONS:
+STORMWATER: [Title] - [Detailed recommendation with specific document references, calculations, and regulatory citations]`;
+
+    const response = await this.anthropic!.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4000,
+      system: `You are Claude, a specialized stormwater engineering AI with access to a comprehensive reference library. Always cite specific documents, sections, and standards from the provided library when making recommendations. Identify ALL potential issues by cross-referencing the entire document library.`,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+    });
+
+    const analysisText = response.content[0].type === 'text' ? response.content[0].text : '';
+    return this.parseAnalysisResponse(analysisText, document);
+  }
+
+  private buildReferenceContext(allDocuments: Document[]): string {
+    // Filter out the current document and build a context summary
+    const referenceDocs = allDocuments
+      .filter(doc => doc.content && doc.content.length > 50) // Only include substantial documents
+      .slice(0, 20); // Limit to avoid token limits
+
+    if (referenceDocs.length === 0) {
+      return "No reference documents available in the library.";
+    }
+
+    return referenceDocs.map((doc, index) => {
+      const preview = doc.content.substring(0, 500);
+      return `[${index + 1}] Document: "${doc.originalName}"
+Category: ${doc.category}
+Content Preview: ${preview}${doc.content.length > 500 ? '...' : ''}
+---`;
+    }).join('\n');
   }
 
   private async analyzeTextDocument(document: Document, query?: string): Promise<AnalysisResult> {
