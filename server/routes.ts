@@ -7,6 +7,7 @@ import { DocumentProcessor } from "./services/document-processor";
 import { AIAnalyzer } from "./services/ai-analyzer";
 import { RecommendationGenerator } from "./services/recommendation-generator";
 import { DocumentExporter } from "./services/document-exporter";
+import { DocumentGenerator } from "./services/document-generator";
 import { ChatService } from "./services/chat-service";
 import { WebSearchService } from "./services/web-search-service";
 import { insertDocumentSchema, insertAiAnalysisSchema } from "@shared/schema";
@@ -20,6 +21,7 @@ const documentProcessor = new DocumentProcessor();
 const aiAnalyzer = new AIAnalyzer();
 const recommendationGenerator = new RecommendationGenerator();
 const documentExporter = new DocumentExporter();
+const documentGenerator = new DocumentGenerator();
 const chatService = new ChatService();
 const webSearchService = new WebSearchService();
 
@@ -328,6 +330,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Download error:', error);
       res.status(500).json({ error: "Failed to download document" });
+    }
+  });
+
+  // Generate new document
+  app.post("/api/documents/generate", async (req, res) => {
+    try {
+      const { 
+        title, 
+        query, 
+        sourceDocumentIds = [], 
+        includeRecommendations = true, 
+        includeAnalyses = true, 
+        format = 'txt', 
+        template = 'report' 
+      } = req.body;
+
+      if (!title) {
+        return res.status(400).json({ error: "Document title is required" });
+      }
+
+      const generatedDoc = await documentGenerator.generateDocument({
+        title,
+        query,
+        sourceDocumentIds,
+        includeRecommendations,
+        includeAnalyses,
+        format,
+        template
+      });
+
+      res.json(generatedDoc);
+    } catch (error) {
+      console.error('Document generation error:', error);
+      res.status(500).json({ error: "Failed to generate document" });
+    }
+  });
+
+  // Download generated document
+  app.post("/api/documents/generate/download", async (req, res) => {
+    try {
+      const { 
+        title, 
+        query, 
+        sourceDocumentIds = [], 
+        includeRecommendations = true, 
+        includeAnalyses = true, 
+        format = 'txt', 
+        template = 'report' 
+      } = req.body;
+
+      if (!title) {
+        return res.status(400).json({ error: "Document title is required" });
+      }
+
+      const generatedDoc = await documentGenerator.generateDocument({
+        title,
+        query,
+        sourceDocumentIds,
+        includeRecommendations,
+        includeAnalyses,
+        format,
+        template
+      });
+
+      // Convert content to buffer
+      const buffer = Buffer.from(generatedDoc.content, 'utf-8');
+
+      // Set appropriate headers for download
+      const mimeTypes: Record<string, string> = {
+        txt: 'text/plain',
+        md: 'text/markdown',
+        docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        pdf: 'application/pdf'
+      };
+
+      const extensions: Record<string, string> = {
+        txt: 'txt',
+        md: 'md',
+        docx: 'docx',
+        pdf: 'pdf'
+      };
+
+      const mimeType = mimeTypes[format] || 'text/plain';
+      const extension = extensions[format] || 'txt';
+      const filename = `${title.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')}.${extension}`;
+
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+
+    } catch (error) {
+      console.error('Document generation download error:', error);
+      res.status(500).json({ error: "Failed to generate and download document" });
     }
   });
 

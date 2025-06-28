@@ -53,19 +53,19 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="p-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">
+      <div className="space-y-2">
+        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
           Engineering Recommendations Dashboard
         </h1>
-        <p className="mt-2 text-muted-foreground">
+        <p className="text-sm md:text-base text-muted-foreground">
           Comprehensive stormwater management guidance and best practices
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard
           title="QSD Guidelines"
           value={stats?.qsdCount || 0}
@@ -93,7 +93,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
         {/* Recent Recommendations */}
         <Card>
           <CardHeader>

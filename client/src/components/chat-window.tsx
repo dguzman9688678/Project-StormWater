@@ -99,8 +99,8 @@ export function ChatWindow({ isOpen, onClose, onMinimize, isMinimized }: ChatWin
 
   return (
     <Card className={`fixed bottom-4 right-4 bg-white border shadow-lg transition-all duration-300 ${
-      isMinimized ? 'w-80 h-12' : 'w-96 h-96'
-    } z-50`}>
+      isMinimized ? 'w-72 sm:w-80 h-12' : 'w-80 sm:w-96 h-80 sm:h-96'
+    } z-50 max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)]`}>
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b bg-primary text-primary-foreground">
         <div className="flex items-center gap-2">

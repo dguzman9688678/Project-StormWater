@@ -43,9 +43,9 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
 
   return (
     <Card className="recommendation-card">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-3">
-          <Badge className={`category-badge ${recommendation.category}`}>
+      <CardContent className="p-4 md:p-6">
+        <div className="flex items-start justify-between mb-3 gap-2">
+          <Badge className={`category-badge ${recommendation.category} text-xs`}>
             {recommendation.subcategory || getCategoryLabel(recommendation.category)}
           </Badge>
           <Button
@@ -53,6 +53,7 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
             size="sm"
             onClick={() => bookmarkMutation.mutate()}
             disabled={bookmarkMutation.isPending}
+            className="flex-shrink-0"
           >
             <Bookmark 
               className={`h-4 w-4 ${
@@ -64,7 +65,7 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
           </Button>
         </div>
 
-        <h3 className="text-lg font-semibold text-foreground mb-2">
+        <h3 className="text-base md:text-lg font-semibold text-foreground mb-2 line-clamp-2">
           {recommendation.title}
         </h3>
         

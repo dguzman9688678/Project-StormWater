@@ -16,7 +16,7 @@ export function SearchResults({ results, isLoading, query }: SearchResultsProps)
   if (!query || query.length < 2) return null;
 
   return (
-    <Card className="absolute top-full left-0 right-0 mt-1 max-h-96 overflow-y-auto z-50">
+    <Card className="absolute top-full left-0 right-0 mt-1 max-h-80 sm:max-h-96 overflow-y-auto z-50 max-w-full">
       <CardContent className="p-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-4">

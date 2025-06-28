@@ -102,4 +102,32 @@
   .search-highlight {
     @apply bg-yellow-200 dark:bg-yellow-900/50;
   }
+
+  /* Mobile-first responsive utilities */
+  @media (max-width: 640px) {
+    .sidebar-nav-item {
+      @apply text-sm py-3;
+    }
+  }
+
+  /* Touch-friendly improvements */
+  @media (hover: none) {
+    .sidebar-nav-item:hover {
+      @apply bg-transparent;
+    }
+    
+    .sidebar-nav-item:active {
+      @apply bg-muted;
+    }
+  }
+
+  /* Ensure proper scrolling on mobile */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+  }
 }
