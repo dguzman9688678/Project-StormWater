@@ -343,8 +343,14 @@ ${analysisResult.recommendations.map((rec, i) => `${i + 1}. ${rec.title}\n   ${r
         </div>
         <div className="p-6">
           <AdminControls 
-            onUploadToLibrary={handleAdminUpload}
-            onDeleteDocument={handleDeleteDocument}
+            onUploadToLibrary={(files, description) => {
+              adminUploadMutation.mutate({ files, description });
+            }}
+            onDeleteDocument={(id) => {
+              if (window.confirm('Are you sure you want to delete this document from the reference library? This action cannot be undone.')) {
+                deleteMutation.mutate(id);
+              }
+            }}
           />
         </div>
       </div>
@@ -355,40 +361,44 @@ ${analysisResult.recommendations.map((rec, i) => `${i + 1}. ${rec.title}\n   ${r
     <div className="min-h-screen bg-background">
       {/* Professional Header */}
       <header className="border-b bg-card">
-        <div className="flex h-16 items-center justify-between px-6">
-          <div className="flex items-center space-x-4">
+        <div className="flex h-16 items-center justify-between px-4 lg:px-6">
+          <div className="flex items-center space-x-2 lg:space-x-4">
             <div className="flex items-center space-x-2">
-              <Brain className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold">Stormwater AI</h1>
+              <Brain className="h-6 w-6 lg:h-8 lg:w-8 text-primary" />
+              <h1 className="text-lg lg:text-2xl font-bold">Stormwater AI</h1>
             </div>
-            <Badge variant="secondary">Professional Platform</Badge>
+            <Badge variant="secondary" className="hidden sm:block">Professional Platform</Badge>
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 lg:space-x-4">
             {stats && (
-              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+              <div className="hidden md:flex items-center space-x-2 lg:space-x-4 text-xs lg:text-sm text-muted-foreground">
                 <div className="flex items-center space-x-1">
-                  <FileText className="h-4 w-4" />
-                  <span>{stats.documentCount} Documents</span>
+                  <FileText className="h-3 w-3 lg:h-4 lg:w-4" />
+                  <span className="hidden lg:inline">{stats.documentCount} Documents</span>
+                  <span className="lg:hidden">{stats.documentCount}</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <CheckCircle className="h-4 w-4" />
-                  <span>{stats.recommendationCount} Recommendations</span>
+                  <CheckCircle className="h-3 w-3 lg:h-4 lg:w-4" />
+                  <span className="hidden lg:inline">{stats.recommendationCount} Recommendations</span>
+                  <span className="lg:hidden">{stats.recommendationCount}</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <Brain className="h-4 w-4" />
-                  <span>{stats.analysisCount} Analyses</span>
+                  <Brain className="h-3 w-3 lg:h-4 lg:w-4" />
+                  <span className="hidden lg:inline">{stats.analysisCount} Analyses</span>
+                  <span className="lg:hidden">{stats.analysisCount}</span>
                 </div>
               </div>
             )}
             
             <Button
               variant="outline"
+              size="sm"
               onClick={() => setShowAdminPanel(true)}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-1 lg:space-x-2"
             >
-              <Settings className="h-4 w-4" />
-              <span>Admin</span>
+              <Settings className="h-3 w-3 lg:h-4 lg:w-4" />
+              <span className="hidden sm:inline">Admin</span>
             </Button>
           </div>
         </div>
@@ -396,9 +406,9 @@ ${analysisResult.recommendations.map((rec, i) => `${i + 1}. ${rec.title}\n   ${r
 
       <div className="flex h-[calc(100vh-4rem)]">
         {/* Main Content Area */}
-        <div className="flex-1 flex">
+        <div className="flex-1 flex flex-col lg:flex-row">
           {/* Left Panel - Document Upload & Management */}
-          <div className="w-1/2 border-r p-6 space-y-6">
+          <div className="w-full lg:w-1/2 border-r border-b lg:border-b-0 p-4 lg:p-6 space-y-4 lg:space-y-6">
             {/* Upload Section */}
             <Card>
               <CardHeader>
@@ -552,7 +562,7 @@ ${analysisResult.recommendations.map((rec, i) => `${i + 1}. ${rec.title}\n   ${r
           </div>
 
           {/* Right Panel - Document Preview & Analysis */}
-          <div className="w-1/2 p-6 space-y-6">
+          <div className="w-full lg:w-1/2 p-4 lg:p-6 space-y-4 lg:space-y-6">
             {/* Document Preview */}
             <DocumentPreview 
               document={selectedDocument ? {

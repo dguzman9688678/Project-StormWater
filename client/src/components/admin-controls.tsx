@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
+import { SystemStatus } from "@/components/system-status";
 
 interface AdminControlsProps {
   onUploadToLibrary?: (files: File[], description?: string) => void;
@@ -149,11 +150,12 @@ export function AdminControls({ onUploadToLibrary, onDeleteDocument, className }
   return (
     <div className={className}>
       <Tabs defaultValue="library" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="library">Source Library</TabsTrigger>
           <TabsTrigger value="permissions">User Access</TabsTrigger>
           <TabsTrigger value="configuration">System Config</TabsTrigger>
           <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
+          <TabsTrigger value="testing">System Tests</TabsTrigger>
         </TabsList>
 
         {/* Source Library Management */}
@@ -507,6 +509,11 @@ export function AdminControls({ onUploadToLibrary, onDeleteDocument, className }
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* System Testing */}
+        <TabsContent value="testing" className="space-y-6">
+          <SystemStatus />
         </TabsContent>
       </Tabs>
     </div>
