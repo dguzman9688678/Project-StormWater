@@ -1,17 +1,21 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { PythonInterpreter } from './python-interpreter';
 
 export class ChatService {
   private anthropic: Anthropic | null = null;
   private hasApiKey: boolean;
+  private pythonInterpreter: PythonInterpreter;
 
   constructor() {
     const apiKey = process.env.ANTHROPIC_API_KEY || '';
     this.hasApiKey = !!apiKey;
+    this.pythonInterpreter = new PythonInterpreter();
     
     if (this.hasApiKey) {
       this.anthropic = new Anthropic({
         apiKey: apiKey,
       });
+      console.log('Chat service initialized with Python interpreter capabilities');
     }
   }
 
@@ -135,6 +139,65 @@ Show your analytical reasoning process and provide practical, field-ready recomm
     } catch (error) {
       console.error('Image analysis error:', error);
       return "I apologize, but I encountered an error analyzing the image. Please ensure the image is properly formatted and try again.";
+    }
+  }
+
+  private containsPythonRequest(message: string): boolean {
+    const pythonKeywords = [
+      'calculate', 'computation', 'python', 'code', 'analysis', 'plot', 'graph',
+      'runoff coefficient', 'peak flow', 'bmp sizing', 'water quality'
+    ];
+    
+    return pythonKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword.toLowerCase())
+    );
+  }
+
+  private async handlePythonRequest(message: string): Promise<any> {
+    try {
+      // Extract calculation requests from the message
+      if (message.toLowerCase().includes('runoff coefficient')) {
+        const result = await this.pythonInterpreter.executeQuickCalculation(
+          'analyze_runoff_coefficient({"residential": 10, "commercial": 5})',
+          {}
+        );
+        return result;
+      }
+      
+      if (message.toLowerCase().includes('peak flow')) {
+        const result = await this.pythonInterpreter.executeQuickCalculation(
+          'calculate_peak_flow(2.0, 100, 0.5)',
+          {}
+        );
+        return result;
+      }
+
+      if (message.toLowerCase().includes('bmp sizing')) {
+        const result = await this.pythonInterpreter.executeQuickCalculation(
+          'bmp_sizing_calculator(1000, "bioretention")',
+          {}
+        );
+        return result;
+      }
+
+      // For other requests, return test environment
+      return await this.pythonInterpreter.testPythonEnvironment();
+      
+    } catch (error) {
+      console.error('Python execution error in chat:', error);
+      return { error: 'Python execution failed', success: false };
+    }
+  }
+
+  async executePythonCode(code: string, data?: any): Promise<any> {
+    try {
+      return await this.pythonInterpreter.executeStormwaterAnalysis(code, data);
+    } catch (error) {
+      console.error('Python execution error:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Python execution failed' 
+      };
     }
   }
 }

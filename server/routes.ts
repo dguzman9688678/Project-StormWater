@@ -10,6 +10,7 @@ import { DocumentExporter } from "./services/document-exporter";
 import { DocumentGenerator } from "./services/document-generator";
 import { ChatService } from "./services/chat-service";
 import { WebSearchService } from "./services/web-search-service";
+import { PythonInterpreter } from "./services/python-interpreter";
 
 import { insertDocumentSchema, insertAiAnalysisSchema } from "@shared/schema";
 
@@ -25,6 +26,7 @@ const documentExporter = new DocumentExporter();
 const documentGenerator = new DocumentGenerator();
 const chatService = new ChatService();
 const webSearchService = new WebSearchService();
+const pythonInterpreter = new PythonInterpreter();
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -519,6 +521,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: "AI enhanced search failed",
         results: [],
         insights: "Unable to generate AI insights for this search"
+      });
+    }
+  });
+
+  // Python interpreter endpoints
+  app.post("/api/python/execute", async (req, res) => {
+    try {
+      const { code, data, analysisType } = req.body;
+      
+      if (!code || typeof code !== 'string') {
+        return res.status(400).json({ error: 'Python code is required' });
+      }
+
+      console.log('🐍 Executing Python code for stormwater analysis');
+      
+      const result = await pythonInterpreter.executeStormwaterAnalysis(
+        code, 
+        data,
+        analysisType || 'data_analysis'
+      );
+      
+      res.json(result);
+
+    } catch (error) {
+      console.error('Python execution error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Python execution failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post("/api/python/calculate", async (req, res) => {
+    try {
+      const { calculation, parameters } = req.body;
+      
+      if (!calculation || typeof calculation !== 'string') {
+        return res.status(400).json({ error: 'Calculation expression is required' });
+      }
+
+      console.log(`🧮 Python calculation: ${calculation}`);
+      
+      const result = await pythonInterpreter.executeQuickCalculation(calculation, parameters);
+      
+      res.json(result);
+
+    } catch (error) {
+      console.error('Python calculation error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Python calculation failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get("/api/python/test", async (req, res) => {
+    try {
+      console.log('🔧 Testing Python environment');
+      
+      const result = await pythonInterpreter.testPythonEnvironment();
+      
+      res.json({
+        ...result,
+        message: 'Python environment test completed',
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error('Python test error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Python environment test failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });
