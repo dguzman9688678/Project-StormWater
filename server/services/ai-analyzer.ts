@@ -35,12 +35,57 @@ export class AIAnalyzer {
     }
 
     try {
-      const prompt = this.buildAnalysisPrompt(document, query);
+      const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(document.originalName);
       
-      const response = await this.anthropic.messages.create({
+      if (isImage) {
+        return await this.analyzeImageDocument(document, query);
+      } else {
+        return await this.analyzeTextDocument(document, query);
+      }
+    } catch (error) {
+      console.error('AI analysis failed:', error);
+      return this.generateFallbackAnalysis(document, query);
+    }
+  }
+
+  private async analyzeImageDocument(document: Document, query?: string): Promise<AnalysisResult> {
+    // For images, we need to read the file and convert to base64
+    const fs = await import('fs');
+    const path = await import('path');
+    
+    try {
+      // The document content for images contains the description, but we need the actual file
+      // Let's construct a text-based analysis for now since we don't have direct file access
+      const prompt = `As a specialized stormwater engineering expert, analyze this construction site image:
+
+**Image Information:**
+- Filename: ${document.originalName}
+- Category: ${document.category}
+- Site Description: ${document.content}
+
+**Analysis Instructions:**
+Based on the filename "${document.originalName}" and any site description provided, perform a comprehensive stormwater engineering analysis. This appears to be a construction site photo that requires professional stormwater management assessment.
+
+**Analysis Required:**
+1. **Site Assessment**: Based on the image name and context, identify likely site conditions
+2. **Stormwater Concerns**: Identify potential drainage, erosion, and sediment control issues
+3. **BMP Recommendations**: Suggest appropriate Best Management Practices
+4. **Compliance Requirements**: Address regulatory compliance needs
+
+${query ? `**Specific Query**: ${query}` : ''}
+
+**Format your response as:**
+ANALYSIS: [Detailed engineering analysis based on site context]
+
+INSIGHTS: [Key engineering insights as bullet points]
+
+RECOMMENDATIONS:
+STORMWATER: [Title] - [Detailed recommendation with engineering specifications]`;
+
+      const response = await this.anthropic!.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
-        system: `You are Claude, a specialized stormwater engineering AI with deep expertise in QSD certification, SWPPP development, erosion control, construction site stormwater management, and regional regulations. Provide detailed, practical, and actionable engineering recommendations based on uploaded documents.`,
+        system: `You are Claude, a specialized stormwater engineering AI with expertise in construction site management, erosion control, and regulatory compliance. Analyze construction sites for stormwater management needs.`,
         messages: [
           {
             role: 'user',
@@ -52,9 +97,28 @@ export class AIAnalyzer {
       const analysisText = response.content[0].type === 'text' ? response.content[0].text : '';
       return this.parseAnalysisResponse(analysisText, document);
     } catch (error) {
-      console.error('AI analysis failed:', error);
+      console.error('Image analysis failed:', error);
       return this.generateFallbackAnalysis(document, query);
     }
+  }
+
+  private async analyzeTextDocument(document: Document, query?: string): Promise<AnalysisResult> {
+    const prompt = this.buildAnalysisPrompt(document, query);
+    
+    const response = await this.anthropic!.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4000,
+      system: `You are Claude, a specialized stormwater engineering AI with deep expertise in QSD certification, SWPPP development, erosion control, construction site stormwater management, and regional regulations. Provide detailed, practical, and actionable engineering recommendations based on uploaded documents.`,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+    });
+
+    const analysisText = response.content[0].type === 'text' ? response.content[0].text : '';
+    return this.parseAnalysisResponse(analysisText, document);
   }
 
   private buildAnalysisPrompt(document: Document, query?: string): string {

@@ -138,7 +138,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Start AI analysis in background
       setImmediate(async () => {
         try {
+          console.log(`Starting AI analysis for ${document.originalName} (ID: ${document.id})`);
           const analysisResult = await aiAnalyzer.analyzeDocument(document);
+          
+          console.log(`AI analysis complete for ${document.originalName}`);
           
           // Save AI analysis
           const aiAnalysisData = insertAiAnalysisSchema.parse({
