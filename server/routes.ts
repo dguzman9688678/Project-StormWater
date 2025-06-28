@@ -502,7 +502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat with Claude about documents
   app.post("/api/chat", async (req, res) => {
     try {
-      const { message, currentDocument } = req.body;
+      const { message, currentDocument, adminMode } = req.body;
 
       if (!message || typeof message !== 'string') {
         return res.status(400).json({ error: "Message is required" });
@@ -578,8 +578,28 @@ Content: ${currentDocument.content ? currentDocument.content.substring(0, 1000) 
         }
       }
 
-      // Enhanced message with context
-      const contextualMessage = `You are a stormwater engineering expert with access to a reference library. Here is the available documentation:
+      // Enhanced message with context - special handling for admin mode
+      let contextualMessage;
+      
+      if (adminMode) {
+        // Admin mode: Give Claude full capabilities and system awareness
+        contextualMessage = `You are Claude 4, in administrator mode for the Stormwater AI system. You have full administrative awareness and capabilities.
+
+SYSTEM CONTEXT:
+- You are chatting with Daniel Guzman, the system owner and administrator
+- This is a private administrative chat with full Claude 4 capabilities
+- You have access to all system functions and can discuss any topic
+- Current system status: Stormwater AI application with ${documents.length} documents in library
+
+REFERENCE LIBRARY (${documents.length} documents):
+${documentContext}
+
+Administrator message: ${message}
+
+Respond as Claude 4 with full capabilities. You can discuss system administration, provide technical analysis, answer general questions, or help with any stormwater engineering topics. Be professional but conversational.`;
+      } else {
+        // Regular user mode: Focus on stormwater engineering
+        contextualMessage = `You are a stormwater engineering expert with access to a reference library. Here is the available documentation:
 
 REFERENCE LIBRARY:
 ${documentContext}
@@ -588,6 +608,7 @@ ${currentDocContext}
 User question: ${message}
 
 Please provide a comprehensive response using information from the reference library above and the currently uploaded document if provided. Include specific recommendations and cite relevant documents when applicable.`;
+      }
 
       const response = await chatService.processMessage(contextualMessage);
       res.json({ response });
@@ -762,8 +783,10 @@ Please provide a comprehensive response using information from the reference lib
         return res.status(401).json({ error: "Unauthorized access" });
       }
 
-      // Password verification will be provided by you
-      // For now, we're ready to receive the password
+      // Verify password
+      if (password !== '529504Djg1.') {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
       
       const token = await storage.createAdminSession(email);
       res.json({ success: true, token, message: "Admin authenticated successfully" });
