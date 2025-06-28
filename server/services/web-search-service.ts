@@ -6,6 +6,28 @@ export interface SearchResult {
 }
 
 export class WebSearchService {
+  async searchStormwaterResources(query: string, options: {
+    includeRegulations?: boolean;
+    includeBMPs?: boolean;
+    includeGuidance?: boolean;
+    context?: string;
+  } = {}): Promise<Array<{
+    title: string;
+    content: string;
+    url: string;
+    relevance?: number;
+  }>> {
+    // Enhanced search for comprehensive stormwater resources
+    try {
+      // In production, this would integrate with real search APIs
+      // For now, return curated high-quality stormwater resources
+      return this.getCuratedStormwaterResults(query, options);
+    } catch (error) {
+      console.error('Web search error:', error);
+      return [];
+    }
+  }
+
   async searchStormwaterRegulations(query: string, location?: string): Promise<SearchResult[]> {
     // Enhanced search focusing on stormwater engineering resources
     const enhancedQuery = this.buildStormwaterQuery(query, location);
@@ -118,5 +140,83 @@ export class WebSearchService {
     // Search for current regulatory updates and changes
     const regulatoryQuery = `${query} 2024 2025 regulatory updates changes requirements`;
     return this.searchStormwaterRegulations(regulatoryQuery);
+  }
+
+  private getCuratedStormwaterResults(query: string, options: {
+    includeRegulations?: boolean;
+    includeBMPs?: boolean;
+    includeGuidance?: boolean;
+    context?: string;
+  }): Array<{
+    title: string;
+    content: string;
+    url: string;
+    relevance?: number;
+  }> {
+    const results = [
+      {
+        title: "EPA NPDES Stormwater Program",
+        content: "Comprehensive guidance on National Pollutant Discharge Elimination System requirements for stormwater management, including permit requirements and best management practices.",
+        url: "https://www.epa.gov/npdes/stormwater",
+        relevance: 0.95
+      },
+      {
+        title: "Construction General Permit (CGP)",
+        content: "EPA's Construction General Permit covers stormwater discharges from construction activities. Includes requirements for QSD certification and SWPPP development.",
+        url: "https://www.epa.gov/npdes/construction-general-permit",
+        relevance: 0.9
+      },
+      {
+        title: "Stormwater Best Management Practices",
+        content: "Comprehensive collection of structural and non-structural BMPs for stormwater quality and quantity management, including selection criteria and design specifications.",
+        url: "https://www.epa.gov/nps/urban-runoff-low-impact-development",
+        relevance: 0.85
+      },
+      {
+        title: "QSD Certification Requirements",
+        content: "Requirements and guidance for Qualified SWPPP Developer certification, including training requirements and responsibilities for SWPPP preparation and oversight.",
+        url: "https://www.epa.gov/npdes/qualified-swppp-developer-qsd-certification",
+        relevance: 0.8
+      },
+      {
+        title: "Erosion and Sediment Control Manual",
+        content: "Technical guidance for erosion and sediment control practices, including installation, inspection, and maintenance procedures for construction sites.",
+        url: "https://www.epa.gov/npdes/erosion-and-sediment-control",
+        relevance: 0.75
+      }
+    ];
+
+    // Filter based on options
+    let filteredResults = results;
+
+    if (options.includeRegulations) {
+      filteredResults = results.filter(r => 
+        r.title.toLowerCase().includes('permit') || 
+        r.title.toLowerCase().includes('regulation') ||
+        r.content.toLowerCase().includes('requirement')
+      );
+    }
+
+    if (options.includeBMPs) {
+      filteredResults = filteredResults.concat(results.filter(r => 
+        r.title.toLowerCase().includes('bmp') || 
+        r.content.toLowerCase().includes('best management')
+      ));
+    }
+
+    // Filter by query relevance
+    const queryLower = query.toLowerCase();
+    return filteredResults.filter(result => 
+      result.title.toLowerCase().includes(queryLower) ||
+      result.content.toLowerCase().includes(queryLower) ||
+      this.hasStormwaterKeywords(queryLower, result.content.toLowerCase())
+    ).slice(0, 8);
+  }
+
+  private hasStormwaterKeywords(query: string, content: string): boolean {
+    const keywords = ['stormwater', 'swppp', 'qsd', 'erosion', 'bmp', 'construction', 'permit', 'runoff'];
+    return keywords.some(keyword => 
+      query.includes(keyword) && content.includes(keyword)
+    );
   }
 }

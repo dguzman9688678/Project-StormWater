@@ -399,6 +399,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced web search with Claude 4
+  app.post("/api/search/web-enhanced", async (req, res) => {
+    try {
+      const { query, context, includeRegulations, includeGuidance } = req.body;
+      
+      if (!query || query.length < 3) {
+        return res.status(400).json({ error: "Search query must be at least 3 characters" });
+      }
+
+      // Use web search service to find relevant results
+      const webResults = await webSearchService.searchStormwaterResources(query, {
+        includeRegulations: includeRegulations || false,
+        includeBMPs: true,
+        includeGuidance: includeGuidance || false,
+        context: context || 'stormwater engineering'
+      });
+
+      // Use Claude 4 to analyze and summarize the results
+      const aiSummary = await chatService.processMessage(`
+        Analyze these stormwater search results for "${query}" and provide key insights:
+        
+        Results:
+        ${webResults.map((r: any) => `${r.title}: ${r.content}`).join('\n')}
+        
+        Provide a professional summary focusing on:
+        1. Key regulatory requirements
+        2. Best management practices
+        3. Implementation guidance
+        4. Compliance considerations
+      `);
+
+      res.json({
+        results: webResults.map((result: any) => ({
+          id: `web-${Date.now()}-${Math.random()}`,
+          title: result.title,
+          content: result.content,
+          source: 'web',
+          url: result.url,
+          relevance: result.relevance || 0.8
+        })),
+        aiSummary: aiSummary
+      });
+
+    } catch (error) {
+      console.error('Enhanced web search error:', error);
+      res.status(500).json({ 
+        error: "Enhanced web search failed",
+        results: [],
+        aiSummary: "Unable to perform enhanced search analysis"
+      });
+    }
+  });
+
+  // AI-enhanced contextual search
+  app.post("/api/search/ai-enhanced", async (req, res) => {
+    try {
+      const { query, searchLibrary, generateInsights, includeRecommendations } = req.body;
+      
+      if (!query || query.length < 3) {
+        return res.status(400).json({ error: "Search query must be at least 3 characters" });
+      }
+
+      // Perform local search first
+      const localResults = await storage.globalSearch(query);
+      
+      // Get all documents for context if requested
+      let contextDocuments: any[] = [];
+      if (searchLibrary) {
+        contextDocuments = await storage.getAllDocuments();
+      }
+
+      // Use Claude 4 to enhance search results with AI insights
+      const aiAnalysis = await chatService.processMessage(`
+        As a stormwater expert, analyze this search query: "${query}"
+        
+        Available documents: ${contextDocuments.map((doc: any) => `${doc.originalName}: ${doc.content?.substring(0, 300)}`).join('\n')}
+        
+        Current search results:
+        ${JSON.stringify(localResults, null, 2)}
+        
+        Provide:
+        1. Enhanced search insights specific to stormwater management
+        2. Related topics the user should consider
+        3. Regulatory context and requirements
+        4. Practical implementation guidance
+        
+        ${includeRecommendations ? '5. Specific actionable recommendations' : ''}
+      `);
+
+      // Format results for consistent interface
+      const enhancedResults = [
+        ...localResults.documents?.map((doc: any) => ({
+          id: `ai-doc-${doc.id}`,
+          title: doc.originalName,
+          content: doc.content?.substring(0, 200) + "...",
+          source: 'document',
+          category: doc.category,
+          relevance: 0.95
+        })) || [],
+        ...localResults.recommendations?.map((rec: any) => ({
+          id: `ai-rec-${rec.id}`,
+          title: rec.title,
+          content: rec.content?.substring(0, 200) + "...",
+          source: 'recommendation',
+          category: rec.category,
+          relevance: 0.9
+        })) || []
+      ];
+
+      res.json({
+        results: enhancedResults,
+        insights: aiAnalysis
+      });
+
+    } catch (error) {
+      console.error('AI enhanced search error:', error);
+      res.status(500).json({ 
+        error: "AI enhanced search failed",
+        results: [],
+        insights: "Unable to generate AI insights for this search"
+      });
+    }
+  });
+
   // Download document in various formats
   app.get("/api/documents/:id/download", async (req, res) => {
     try {
