@@ -29,9 +29,6 @@ export default function AllInOnePage() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   
   // Clear analysis results when component mounts (new session)
-  useState(() => {
-    setAnalysisResult(null);
-  });
   const [description, setDescription] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
