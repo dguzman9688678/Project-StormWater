@@ -112,6 +112,7 @@ This is a comprehensive AI-powered stormwater solution system that automatically
 - **June 28, 2025 - Private Reference Library**: Made reference library private - only administrator can add documents to permanent library that AI references for analysis. Regular users get temporary analysis without saving documents
 - **June 28, 2025 - Multiple File Upload**: Added batch upload capability supporting multiple documents simultaneously with individual progress tracking and comprehensive cross-document analysis
 - **June 28, 2025 - All-in-One Interface**: Created comprehensive single-page design with tabbed sections (Upload & Analyze, Source Library, Recommendations, AI Analyses) including live statistics and global search - eliminated need for navigation between pages
+- **June 28, 2025 - Administrator Interface**: Moved Source Library and AI Analyses to Administrator tab - regular users only see Upload & Analyze and Recommendations tabs, while admins get additional access to reference library management
 - **June 28, 2025 - Privacy Update**: Removed "Generated Documents" navigation tab to ensure user privacy and prevent users from seeing others' uploaded documents
 - **June 28, 2025**: Transformed into comprehensive smart solution generation system:
   - **Complete Workflow Redesign**: Upload problem document → AI analyzes entire library → Auto-generates solution documents

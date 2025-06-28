@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, FileText, Brain, Download, CheckCircle, AlertCircle, Loader2, Search, BarChart3, Bookmark, BookmarkCheck, Trash2, X } from "lucide-react";
+import { Upload, FileText, Brain, Download, CheckCircle, AlertCircle, Loader2, Search, BarChart3, Bookmark, BookmarkCheck, Trash2, X, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -270,11 +270,10 @@ export default function AllInOnePage() {
         </Card>
 
         <Tabs defaultValue="upload" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="upload">Upload & Analyze</TabsTrigger>
-            <TabsTrigger value="documents">Source Library</TabsTrigger>
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
-            <TabsTrigger value="analyses">AI Analyses</TabsTrigger>
+            <TabsTrigger value="admin">Administrator</TabsTrigger>
           </TabsList>
 
           {/* Upload & Analyze Tab */}
@@ -448,41 +447,7 @@ export default function AllInOnePage() {
             </div>
           </TabsContent>
 
-          {/* Documents Tab */}
-          <TabsContent value="documents">
-            <Card>
-              <CardHeader>
-                <CardTitle>Source Document Library</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[500px]">
-                  <div className="space-y-3">
-                    {filteredDocuments.map((doc: any) => (
-                      <div key={doc.id} className="p-4 border rounded-lg">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-medium">{doc.originalName}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                              {doc.content.substring(0, 200)}...
-                            </p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="outline">{doc.category}</Badge>
-                              <span className="text-xs text-gray-500">
-                                {new Date(doc.uploadedAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-                          <Button variant="outline" size="sm">
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </TabsContent>
+
 
           {/* Recommendations Tab */}
           <TabsContent value="recommendations">
@@ -526,42 +491,91 @@ export default function AllInOnePage() {
             </Card>
           </TabsContent>
 
-          {/* Analyses Tab */}
-          <TabsContent value="analyses">
-            <Card>
-              <CardHeader>
-                <CardTitle>AI Analysis History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[500px]">
-                  <div className="space-y-3">
-                    {analyses.map((analysis: any) => (
-                      <div key={analysis.id} className="p-4 border rounded-lg">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-medium">Analysis #{analysis.id}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                              Query: {analysis.query}
-                            </p>
-                            <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
-                              {analysis.analysis.substring(0, 200)}...
-                            </p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className="text-xs text-gray-500">
-                                {new Date(analysis.createdAt).toLocaleDateString()}
-                              </span>
-                              {analysis.insights && analysis.insights.length > 0 && (
-                                <Badge variant="outline">{analysis.insights.length} insights</Badge>
-                              )}
+          {/* Administrator Tab */}
+          <TabsContent value="admin" className="space-y-6">
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>Administrator Access:</strong> This section is for managing the reference library that AI uses for analysis. Only authorized administrators can add documents to the permanent library.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Source Library Management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Database className="h-5 w-5" />
+                    Reference Document Library
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px]">
+                    <div className="space-y-3">
+                      {filteredDocuments.map((doc: any) => (
+                        <div key={doc.id} className="p-4 border rounded-lg">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="font-medium">{doc.originalName}</h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                {doc.content.substring(0, 150)}...
+                              </p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline">{doc.category}</Badge>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(doc.uploadedAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                            <Button variant="outline" size="sm">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+
+              {/* AI Analysis History */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="h-5 w-5" />
+                    AI Analysis History
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px]">
+                    <div className="space-y-3">
+                      {analyses.map((analysis: any) => (
+                        <div key={analysis.id} className="p-4 border rounded-lg">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="font-medium">Analysis #{analysis.id}</h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                Query: {analysis.query}
+                              </p>
+                              <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
+                                {analysis.analysis.substring(0, 150)}...
+                              </p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="text-xs text-gray-500">
+                                  {new Date(analysis.createdAt).toLocaleDateString()}
+                                </span>
+                                {analysis.insights && analysis.insights.length > 0 && (
+                                  <Badge variant="outline">{analysis.insights.length} insights</Badge>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
