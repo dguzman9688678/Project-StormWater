@@ -1,0 +1,105 @@
+# ============================================================================
+# COPYRIGHT NOTICE
+# ============================================================================
+# All forms of intellectual documents created from this chat belong to Daniel Guzman
+# Copyright © Daniel Guzman - All Rights Reserved
+# Created: 2025-06-28
+# 
+# This code and all associated documentation, concepts, and intellectual 
+# property are the exclusive property of Daniel Guzman.
+# ============================================================================
+
+# FILE: backend/services/noaa_client.py
+
+import httpx
+import datetime
+import logging
+from typing import Dict, Any, Optional, List
+
+from ..config.settings import settings
+
+logger = logging.getLogger(__name__)
+
+class NOAAClient:
+    def __init__(self):
+        self.api_key = settings.NOAA_API_KEY
+        self.base_url = "https://www.ncdc.noaa.gov/cdo-web/api/v2"
+        self.headers = {"token": self.api_key}
+
+        if not self.api_key:
+            logger.warning("NOAA_API_KEY not set in settings. NOAA API calls will fail.")
+
+    async def _make_request(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        if not self.api_key:
+            raise ValueError("NOAA API Key is not set. Cannot make requests.")
+
+        url = f"{self.base_url}/{endpoint}"
+        logger.debug(f"Making NOAA request to: {url} with params: {params}")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(url, headers=self.headers, params=params)
+                response.raise_for_status()
+                return response.json()
+        except httpx.RequestError as exc:
+            logger.error(f"An error occurred while requesting {exc.request.url!r}: {exc}")
+            raise IOError(f"Network error communicating with NOAA API: {exc}")
+        except httpx.HTTPStatusError as exc:
+            logger.error(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}: {exc.response.text}")
+            raise ValueError(f"NOAA API returned an error: {exc.response.status_code} - {exc.response.text}")
+        except Exception as e:
+            logger.error(f"An unexpected error occurred during NOAA request: {e}")
+            raise
+
+    async def get_daily_data(
+        self,
+        stationid: str,
+        start_date: Optional[datetime.date] = None,
+        end_date: Optional[datetime.date] = None,
+        datatypeid: str = "PRCP"
+    ) -> List[Dict[str, Any]]:
+        if start_date is None:
+            start_date = datetime.date.today() - datetime.timedelta(days=7)
+        if end_date is None:
+            end_date = datetime.date.today()
+
+        params = {
+            "datasetid": "GHCND",
+            "stationid": stationid,
+            "datatypeid": datatypeid,
+            "startdate": start_date.isoformat(),
+            "enddate": end_date.isoformat(),
+            "units": "standard",
+            "limit": 1000,
+            "offset": 0
+        }
+        try:
+            response = await self._make_request("data", params)
+            return response.get("results", [])
+        except Exception as e:
+            logger.error(f"Failed to fetch daily data for station {stationid}: {e}")
+            return []
+
+    async def get_recent_rain_data(self, station_id: str, days: int = 7) -> str:
+        end_date = datetime.date.today()
+        start_date = end_date - datetime.timedelta(days=days)
+
+        rain_data = await self.get_daily_data(station_id=station_id, start_date=start_date, end_date=end_date, datatypeid="PRCP")
+
+        if not rain_data:
+            return f"No precipitation data found for station {station_id} from {start_date} to {end_date}."
+
+        summary_lines = [f"Recent precipitation data for station {station_id} ({start_date} to {end_date}):"]
+        total_precipitation = 0.0
+        conversion_factor = 100.0
+        unit = "inches"
+
+        for entry in rain_data:
+            date_str = entry.get("date", "N/A").split("T")[0]
+            value = entry.get("value")
+            if value is not None:
+                prcp_in_unit = value / conversion_factor
+                summary_lines.append(f"  - Date: {date_str}, Precipitation: {prcp_in_unit:.2f} {unit}")
+                total_precipitation += prcp_in_unit
+        
+        summary_lines.append(f"Total precipitation over the period: {total_precipitation:.2f} {unit}")
+        return "\n".join(summary_lines)

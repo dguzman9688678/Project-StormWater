@@ -1,0 +1,657 @@
+# ============================================================================
+# COMPLETE STORMWATER-AI APPLICATION - FINAL VERSION
+# ============================================================================
+# This is the complete, ready-to-deploy Stormwater-AI application
+# Upload this entire file to Replit and follow the splitting instructions
+# ============================================================================
+
+# FILE: backend/config/settings.py
+import os
+import json
+from pathlib import Path
+from typing import List, Optional
+import logging
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+logger = logging.getLogger(__name__)
+
+class Settings:
+    def __init__(self):
+        self.OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
+        self.NOAA_API_KEY: Optional[str] = os.getenv("NOAA_API_KEY")
+        self.MAPS_API_KEY: Optional[str] = os.getenv("MAPS_API_KEY")
+        self.OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o")
+        self.UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "data/uploads")
+        self.OUTPUT_DIR: str = os.getenv("OUTPUT_DIR", "data/outputs")
+        self.MEMORY_LOG_DIR: str = os.getenv("MEMORY_LOG_DIR", "data/memory")
+        self.MEMORY_LOG_PATH: str = os.getenv("MEMORY_LOG_PATH", "data/memory/memory_log.json")
+
+        allowed_types_env = os.getenv("ALLOWED_FILE_TYPES")
+        if allowed_types_env:
+            try:
+                self.ALLOWED_FILE_TYPES: List[str] = json.loads(allowed_types_env)
+            except json.JSONDecodeError:
+                self.ALLOWED_FILE_TYPES: List[str] = [".pdf", ".docx", ".txt"]
+        else:
+            self.ALLOWED_FILE_TYPES: List[str] = [".pdf", ".docx", ".txt"]
+        
+        self.DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
+        self.HOST: str = os.getenv("HOST", "0.0.0.0")
+        self.PORT: int = int(os.getenv("PORT", "8000"))
+        self.CORS_ORIGINS: List[str] = self._parse_cors_origins()
+        self.LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
+        
+        self._load_config_file()
+        self._validate_settings()
+        self._setup_logging()
+
+    def _parse_cors_origins(self) -> List[str]:
+        cors_origins = os.getenv("CORS_ORIGINS", "*")
+        if cors_origins == "*":
+            return ["*"]
+        return [origin.strip() for origin in cors_origins.split(",")]
+
+    def _load_config_file(self):
+        config_path = Path("config/settings.json")
+        if config_path.exists():
+            try:
+                with open(config_path, 'r') as f:
+                    config_data = json.load(f)
+                for key, value in config_data.items():
+                    if not hasattr(self, key) or getattr(self, key) is None:
+                        setattr(self, key, value)
+                logger.info("Loaded configuration from config/settings.json")
+            except Exception as e:
+                logger.warning(f"Could not load config/settings.json: {e}")
+
+    def _validate_settings(self):
+        warnings = []
+        if not self.OPENAI_API_KEY:
+            warnings.append("OPENAI_API_KEY is not set. OpenAI functionality will not work.")
+        if not self.NOAA_API_KEY:
+            warnings.append("NOAA_API_KEY is not set. Weather data functionality will not work.")
+        
+        for directory in [self.UPLOAD_DIR, self.OUTPUT_DIR, self.MEMORY_LOG_DIR]:
+            Path(directory).mkdir(parents=True, exist_ok=True)
+        
+        for warning in warnings:
+            logger.warning(warning)
+        
+        if warnings:
+            logger.info("Set the missing API keys in your .env file or environment variables to enable full functionality.")
+
+    def _setup_logging(self):
+        log_level = getattr(logging, self.LOG_LEVEL.upper(), logging.INFO)
+        logging.basicConfig(
+            level=log_level,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+        logging.getLogger("openai").setLevel(logging.WARNING)
+        logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+
+    def get_database_url(self) -> Optional[str]:
+        return os.getenv("DATABASE_URL")
+
+    def is_production(self) -> bool:
+        return os.getenv("ENVIRONMENT", "development").lower() == "production"
+
+    def get_api_base_url(self) -> str:
+        protocol = "https" if self.is_production() else "http"
+        return f"{protocol}://{self.HOST}:{self.PORT}"
+
+    def to_dict(self) -> dict:
+        return {
+            "openai_model": self.OPENAI_MODEL,
+            "upload_dir": self.UPLOAD_DIR,
+            "output_dir": self.OUTPUT_DIR,
+            "memory_log_dir": self.MEMORY_LOG_DIR,
+            "allowed_file_types": self.ALLOWED_FILE_TYPES,
+            "debug": self.DEBUG,
+            "host": self.HOST,
+            "port": self.PORT,
+            "cors_origins": self.CORS_ORIGINS,
+            "log_level": self.LOG_LEVEL,
+            "is_production": self.is_production(),
+            "has_openai_key": bool(self.OPENAI_API_KEY),
+            "has_noaa_key": bool(self.NOAA_API_KEY),
+            "has_maps_key": bool(self.MAPS_API_KEY)
+        }
+
+settings = Settings()
+__all__ = ["settings"]
+
+# ============================================================================
+# FILE: backend/main.py
+
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+import os
+from typing import Optional
+
+from .routes.analysis import router as analysis_router
+from .config.settings import settings
+from .memory.session_store import get_session_id, SessionStore
+
+app = FastAPI(
+    title="Stormwater-AI API",
+    description="API for analyzing stormwater documents and managing AI memory.",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(analysis_router, prefix="/api")
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to Stormwater-AI API. Visit /docs for API documentation."}
+
+@app.on_event("startup")
+async def startup_event():
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    os.makedirs(settings.OUTPUT_DIR, exist_ok=True)
+    os.makedirs(settings.MEMORY_LOG_DIR, exist_ok=True)
+    print("Application startup: Directories checked.")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    print("Application shutdown: Cleaning up resources (if any).")
+    pass
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# ============================================================================
+# FILE: backend/routes/analysis.py
+
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status
+from typing import List, Optional
+from pydantic import BaseModel, Field
+import os
+import logging
+
+from ..services.parser import parse_document
+from ..services.openai_client import OpenAIClient
+from ..services.noaa_client import NOAAClient
+from ..memory.session_store import SessionStore, get_session_id
+from ..memory.long_term_store import LongTermMemoryStore
+from ..config.settings import settings
+from ..models.request_models import AnalyzeRequest, MemoryMessage
+
+router = APIRouter()
+logger = logging.getLogger(__name__)
+
+openai_client = OpenAIClient()
+noaa_client = NOAAClient()
+session_store = SessionStore()
+long_term_memory_store = LongTermMemoryStore(settings.MEMORY_LOG_PATH)
+
+@router.post("/analyze", summary="Analyze uploaded stormwater documents")
+async def analyze_document(
+    file: UploadFile = File(..., description="Stormwater document to analyze (PDF, DOCX, TXT)"),
+    user_query: str = Field(..., description="User's specific question or analysis request for the document."),
+    session_id: str = Depends(get_session_id)
+):
+    logger.info(f"Analysis request received for session: {session_id}")
+    file_location = None
+    try:
+        file_extension = os.path.splitext(file.filename)[1].lower()
+        if file_extension not in settings.ALLOWED_FILE_TYPES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported file type: {file_extension}. Allowed types are: {', '.join(settings.ALLOWED_FILE_TYPES)}"
+            )
+
+        file_location = os.path.join(settings.UPLOAD_DIR, file.filename)
+        with open(file_location, "wb") as f:
+            f.write(await file.read())
+        logger.info(f"File saved to {file_location}")
+
+        document_content = await parse_document(file_location)
+        if not document_content:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to parse document content."
+            )
+        logger.info("Document parsed successfully.")
+
+        session_history = session_store.get_messages(session_id)
+        
+        weather_data = None
+        try:
+            if "rain" in user_query.lower() or "weather" in user_query.lower() or "precipitation" in user_query.lower():
+                weather_data = await noaa_client.get_recent_rain_data("USC00045100")
+                logger.info(f"Retrieved NOAA weather data: {weather_data}")
+        except Exception as e:
+            logger.warning(f"Could not fetch NOAA weather data: {e}")
+            weather_data = "No current weather data available or relevant."
+
+        full_context = {
+            "document_content": document_content,
+            "user_query": user_query,
+            "session_history": session_history,
+            "weather_data": weather_data
+        }
+
+        analysis_result = await openai_client.analyze_document_with_context(full_context)
+        logger.info("OpenAI analysis complete.")
+
+        session_store.add_message(session_id, "user", user_query)
+        session_store.add_message(session_id, "assistant", analysis_result)
+        long_term_memory_store.add_entry(session_id, user_query, analysis_result)
+        logger.info("Interaction stored in session and long-term memory.")
+
+        return JSONResponse(content={"analysis": analysis_result, "session_id": session_id})
+
+    except HTTPException as e:
+        logger.error(f"HTTPException in /analyze: {e.detail}")
+        raise e
+    except Exception as e:
+        logger.exception("An unexpected error occurred during analysis.")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An internal server error occurred: {str(e)}")
+    finally:
+        if file_location and os.path.exists(file_location):
+            os.remove(file_location)
+            logger.info(f"Temporary file {file_location} removed.")
+
+@router.get("/memory/{session_id}", response_model=List[MemoryMessage], summary="Retrieve conversation memory for a session")
+async def get_session_memory(session_id: str):
+    logger.info(f"Request to retrieve memory for session: {session_id}")
+    messages = session_store.get_messages(session_id)
+    if not messages:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session memory not found.")
+    return messages
+
+@router.delete("/memory/{session_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Clear conversation memory for a session")
+async def clear_session_memory(session_id: str):
+    logger.info(f"Request to clear memory for session: {session_id}")
+    if session_store.clear_messages(session_id):
+        long_term_memory_store.clear_session_entries(session_id)
+        return {"message": "Session memory cleared."}
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session memory not found.")
+
+# ============================================================================
+# FILE: backend/services/noaa_client.py
+
+import httpx
+import datetime
+import logging
+from typing import Dict, Any, Optional, List
+
+from ..config.settings import settings
+
+logger = logging.getLogger(__name__)
+
+class NOAAClient:
+    def __init__(self):
+        self.api_key = settings.NOAA_API_KEY
+        self.base_url = "https://www.ncdc.noaa.gov/cdo-web/api/v2"
+        self.headers = {"token": self.api_key}
+
+        if not self.api_key:
+            logger.warning("NOAA_API_KEY not set in settings. NOAA API calls will fail.")
+
+    async def _make_request(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        if not self.api_key:
+            raise ValueError("NOAA API Key is not set. Cannot make requests.")
+
+        url = f"{self.base_url}/{endpoint}"
+        logger.debug(f"Making NOAA request to: {url} with params: {params}")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(url, headers=self.headers, params=params)
+                response.raise_for_status()
+                return response.json()
+        except httpx.RequestError as exc:
+            logger.error(f"An error occurred while requesting {exc.request.url!r}: {exc}")
+            raise IOError(f"Network error communicating with NOAA API: {exc}")
+        except httpx.HTTPStatusError as exc:
+            logger.error(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}: {exc.response.text}")
+            raise ValueError(f"NOAA API returned an error: {exc.response.status_code} - {exc.response.text}")
+        except Exception as e:
+            logger.error(f"An unexpected error occurred during NOAA request: {e}")
+            raise
+
+    async def get_daily_data(
+        self,
+        stationid: str,
+        start_date: Optional[datetime.date] = None,
+        end_date: Optional[datetime.date] = None,
+        datatypeid: str = "PRCP"
+    ) -> List[Dict[str, Any]]:
+        if start_date is None:
+            start_date = datetime.date.today() - datetime.timedelta(days=7)
+        if end_date is None:
+            end_date = datetime.date.today()
+
+        params = {
+            "datasetid": "GHCND",
+            "stationid": stationid,
+            "datatypeid": datatypeid,
+            "startdate": start_date.isoformat(),
+            "enddate": end_date.isoformat(),
+            "units": "standard",
+            "limit": 1000,
+            "offset": 0
+        }
+        try:
+            response = await self._make_request("data", params)
+            return response.get("results", [])
+        except Exception as e:
+            logger.error(f"Failed to fetch daily data for station {stationid}: {e}")
+            return []
+
+    async def get_recent_rain_data(self, station_id: str, days: int = 7) -> str:
+        end_date = datetime.date.today()
+        start_date = end_date - datetime.timedelta(days=days)
+
+        rain_data = await self.get_daily_data(station_id=station_id, start_date=start_date, end_date=end_date, datatypeid="PRCP")
+
+        if not rain_data:
+            return f"No precipitation data found for station {station_id} from {start_date} to {end_date}."
+
+        summary_lines = [f"Recent precipitation data for station {station_id} ({start_date} to {end_date}):"]
+        total_precipitation = 0.0
+        conversion_factor = 100.0
+        unit = "inches"
+
+        for entry in rain_data:
+            date_str = entry.get("date", "N/A").split("T")[0]
+            value = entry.get("value")
+            if value is not None:
+                prcp_in_unit = value / conversion_factor
+                summary_lines.append(f"  - Date: {date_str}, Precipitation: {prcp_in_unit:.2f} {unit}")
+                total_precipitation += prcp_in_unit
+        
+        summary_lines.append(f"Total precipitation over the period: {total_precipitation:.2f} {unit}")
+        return "\n".join(summary_lines)
+
+# ============================================================================
+# FILE: backend/services/openai_client.py
+
+from openai import AsyncOpenAI
+import logging
+from typing import Dict, Any
+
+from ..config.settings import settings
+
+logger = logging.getLogger(__name__)
+
+class OpenAIClient:
+    def __init__(self):
+        self.api_key = settings.OPENAI_API_KEY
+        self.model = settings.OPENAI_MODEL
+        self.client = AsyncOpenAI(api_key=self.api_key)
+
+        if not self.api_key:
+            logger.warning("OPENAI_API_KEY not set in settings. OpenAI API calls will fail.")
+
+    async def analyze_document_with_context(self, context: Dict[str, Any]) -> str:
+        if not self.api_key:
+            return "Error: OpenAI API Key is not configured."
+
+        document_content = context.get("document_content", "No document content provided.")
+        user_query = context.get("user_query", "Please analyze the document.")
+        session_history = context.get("session_history", [])
+        weather_data = context.get("weather_data", "No specific weather data provided.")
+
+        messages = [
+            {"role": "system", "content": self._get_system_prompt(document_content, weather_data)},
+        ]
+
+        for msg in session_history:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+
+        messages.append({"role": "user", "content": user_query})
+
+        logger.info(f"Sending request to OpenAI with model: {self.model}")
+        try:
+            chat_completion = await self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=2000,
+            )
+            response_content = chat_completion.choices[0].message.content
+            logger.debug(f"OpenAI raw response: {response_content}")
+            return response_content
+
+        except Exception as e:
+            logger.error(f"Error calling OpenAI API: {e}")
+            raise
+
+    def _get_system_prompt(self, document_content: str, weather_data: str) -> str:
+        return f"""
+        You are Stormwater-AI, an expert assistant specializing in stormwater management, hydrology, environmental regulations, and civil engineering.
+        Your primary role is to analyze provided documents and user queries related to stormwater, offering precise, accurate, and comprehensive answers.
+
+        **Instructions:**
+        1.  **Analyze Documents:** Carefully read the DOCUMENT_CONTENT provided by the user.
+        2.  **Answer Queries:** Respond directly and thoroughly to the USER_QUERY, drawing information primarily from the DOCUMENT_CONTENT.
+        3.  **Contextual Awareness:** Use SESSION_HISTORY to understand the ongoing conversation and WEATHER_DATA for relevant environmental context, if provided and applicable to the query.
+        4.  **Expertise:** Frame your responses with the authority and knowledge of a stormwater engineering expert.
+        5.  **Clarity and Conciseness:** Provide clear, concise, and actionable information. Avoid jargon where simpler terms suffice, but use technical terms correctly when necessary.
+        6.  **No Hallucinations:** If information is not available in the provided context, state that clearly rather than making assumptions.
+        7.  **Safety and Compliance:** Emphasize best practices, regulatory compliance, and environmental protection in your advice.
+        8.  **Formatting:** Use markdown for readability (e.g., bolding, bullet points) where appropriate.
+
+        ---
+        **DOCUMENT_CONTENT:**
+        {document_content}
+
+        ---
+        **CURRENT_WEATHER_DATA (if relevant to user query):**
+        {weather_data}
+
+        ---
+        """
+
+# ============================================================================
+# FILE: backend/services/parser.py
+
+from typing import Optional
+import os
+import logging
+from PyPDF2 import PdfReader
+from docx import Document as DocxDocument
+from ..config.settings import settings
+
+logger = logging.getLogger(__name__)
+
+async def parse_document(file_path: str) -> Optional[str]:
+    file_extension = os.path.splitext(file_path)[1].lower()
+    logger.info(f"Attempting to parse file: {file_path} with extension: {file_extension}")
+
+    if file_extension == ".pdf":
+        return _parse_pdf(file_path)
+    elif file_extension == ".docx":
+        return _parse_docx(file_path)
+    elif file_extension == ".txt":
+        return _parse_txt(file_path)
+    else:
+        logger.warning(f"Unsupported file type for parsing: {file_extension}")
+        return None
+
+def _parse_pdf(file_path: str) -> Optional[str]:
+    try:
+        with open(file_path, "rb") as file:
+            reader = PdfReader(file)
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text() or ""
+        logger.info(f"Successfully parsed PDF: {file_path}")
+        return text
+    except Exception as e:
+        logger.error(f"Error parsing PDF file {file_path}: {e}")
+        return None
+
+def _parse_docx(file_path: str) -> Optional[str]:
+    try:
+        doc = DocxDocument(file_path)
+        text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+        logger.info(f"Successfully parsed DOCX: {file_path}")
+        return text
+    except Exception as e:
+        logger.error(f"Error parsing DOCX file {file_path}: {e}")
+        return None
+
+def _parse_txt(file_path: str) -> Optional[str]:
+    try:
+        with open(file_path, "r", encoding="utf-8") as file:
+            text = file.read()
+        logger.info(f"Successfully parsed TXT: {file_path}")
+        return text
+    except Exception as e:
+        logger.error(f"Error reading TXT file {file_path}: {e}")
+        return None
+
+# ============================================================================
+# FILE: backend/memory/session_store.py
+
+from typing import Dict, List, Optional
+from uuid import uuid4
+from fastapi import Header
+import logging
+
+logger = logging.getLogger(__name__)
+
+class SessionStore:
+    def __init__(self):
+        self.sessions: Dict[str, List[Dict[str, str]]] = {}
+        logger.info("SessionStore initialized.")
+
+    def get_messages(self, session_id: str) -> List[Dict[str, str]]:
+        return self.sessions.get(session_id, [])
+
+    def add_message(self, session_id: str, role: str, content: str):
+        if session_id not in self.sessions:
+            self.sessions[session_id] = []
+            logger.debug(f"New session created: {session_id}")
+        self.sessions[session_id].append({"role": role, "content": content})
+        logger.debug(f"Message added to session {session_id}: Role='{role}', Content (truncated)='{content[:50]}...'")
+
+    def clear_messages(self, session_id: str) -> bool:
+        if session_id in self.sessions:
+            del self.sessions[session_id]
+            logger.info(f"Session {session_id} cleared.")
+            return True
+        logger.warning(f"Attempted to clear non-existent session: {session_id}")
+        return False
+
+async def get_session_id(x_session_id: Optional[str] = Header(None)) -> str:
+    if x_session_id:
+        return x_session_id
+    new_session_id = str(uuid4())
+    logger.info(f"Generated new session ID: {new_session_id}")
+    return new_session_id
+
+# ============================================================================
+# FILE: backend/memory/long_term_store.py
+
+import json
+import os
+import datetime
+import logging
+from typing import Dict, List, Any, Optional
+
+logger = logging.getLogger(__name__)
+
+class LongTermMemoryStore:
+    def __init__(self, memory_file_path: str):
+        self.memory_file_path = memory_file_path
+        self._ensure_directory_exists()
+        self._initialize_memory_file()
+        logger.info(f"LongTermMemoryStore initialized. Memory file: {self.memory_file_path}")
+
+    def _ensure_directory_exists(self):
+        dir_name = os.path.dirname(self.memory_file_path)
+        if dir_name and not os.path.exists(dir_name):
+            os.makedirs(dir_name, exist_ok=True)
+            logger.info(f"Created memory directory: {dir_name}")
+
+    def _initialize_memory_file(self):
+        if not os.path.exists(self.memory_file_path) or os.path.getsize(self.memory_file_path) == 0:
+            with open(self.memory_file_path, 'w', encoding='utf-8') as f:
+                json.dump([], f)
+            logger.info(f"Initialized empty long-term memory file: {self.memory_file_path}")
+        else:
+            try:
+                with open(self.memory_file_path, 'r', encoding='utf-8') as f:
+                    json.load(f)
+                logger.debug(f"Existing long-term memory file loaded: {self.memory_file_path}")
+            except json.JSONDecodeError:
+                logger.warning(f"Invalid JSON in {self.memory_file_path}. Re-initializing file.")
+                with open(self.memory_file_path, 'w', encoding='utf-8') as f:
+                    json.dump([], f)
+
+    def _read_memory(self) -> List[Dict[str, Any]]:
+        try:
+            with open(self.memory_file_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Error reading memory file: {e}")
+            return []
+
+    def _write_memory(self, data: List[Dict[str, Any]]):
+        try:
+            with open(self.memory_file_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=4)
+        except Exception as e:
+            logger.error(f"Error writing to memory file: {e}")
+
+    def add_entry(self, session_id: str, user_query: str, assistant_response: str):
+        memory = self._read_memory()
+        new_entry = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "session_id": session_id,
+            "user_query": user_query,
+            "assistant_response": assistant_response
+        }
+        memory.append(new_entry)
+        self._write_memory(memory)
+        logger.debug(f"Added new entry to long-term memory for session {session_id}.")
+
+    def get_all_memory(self) -> List[Dict[str, Any]]:
+        return self._read_memory()
+
+    def get_session_entries(self, session_id: str) -> List[Dict[str, Any]]:
+        all_memory = self._read_memory()
+        return [entry for entry in all_memory if entry.get("session_id") == session_id]
+
+    def clear_session_entries(self, session_id: str):
+        all_memory = self._read_memory()
+        updated_memory = [entry for entry in all_memory if entry.get("session_id") != session_id]
+        if len(updated_memory) < len(all_memory):
+            self._write_memory(updated_memory)
+            logger.info(f"Cleared all long-term memory entries for session {session_id}.")
+
+    def get_relevant_memory(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+        all_memory = self._read_memory()
+        if not all_memory:
+            return []
+
+        relevant_entries = [
+            entry for entry in all_memory
+            if query.lower() in entry.get("user_query", "").lower() or
+               query.lower() in entry.get("assistant_response", "").lower()
+        ]
+
+        relevant_entries.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+        return relevant_entries

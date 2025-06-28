@@ -1,0 +1,133 @@
+# ============================================================================
+# COPYRIGHT NOTICE
+# ============================================================================
+# All forms of intellectual documents created from this chat belong to Daniel Guzman
+# Copyright © Daniel Guzman - All Rights Reserved
+# Created: 2025-06-28
+# 
+# This code and all associated documentation, concepts, and intellectual 
+# property are the exclusive property of Daniel Guzman.
+# ============================================================================
+
+# FILE: backend/config/settings.py
+
+import os
+import json
+from pathlib import Path
+from typing import List, Optional
+import logging
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+logger = logging.getLogger(__name__)
+
+class Settings:
+    def __init__(self):
+        self.OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
+        self.NOAA_API_KEY: Optional[str] = os.getenv("NOAA_API_KEY")
+        self.MAPS_API_KEY: Optional[str] = os.getenv("MAPS_API_KEY")
+        self.OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o")
+        self.UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "data/uploads")
+        self.OUTPUT_DIR: str = os.getenv("OUTPUT_DIR", "data/outputs")
+        self.MEMORY_LOG_DIR: str = os.getenv("MEMORY_LOG_DIR", "data/memory")
+        self.MEMORY_LOG_PATH: str = os.getenv("MEMORY_LOG_PATH", "data/memory/memory_log.json")
+
+        allowed_types_env = os.getenv("ALLOWED_FILE_TYPES")
+        if allowed_types_env:
+            try:
+                self.ALLOWED_FILE_TYPES: List[str] = json.loads(allowed_types_env)
+            except json.JSONDecodeError:
+                self.ALLOWED_FILE_TYPES: List[str] = [".pdf", ".docx", ".txt"]
+        else:
+            self.ALLOWED_FILE_TYPES: List[str] = [".pdf", ".docx", ".txt"]
+        
+        self.DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
+        self.HOST: str = os.getenv("HOST", "0.0.0.0")
+        self.PORT: int = int(os.getenv("PORT", "8000"))
+        self.CORS_ORIGINS: List[str] = self._parse_cors_origins()
+        self.LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
+        
+        self._load_config_file()
+        self._validate_settings()
+        self._setup_logging()
+
+    def _parse_cors_origins(self) -> List[str]:
+        cors_origins = os.getenv("CORS_ORIGINS", "*")
+        if cors_origins == "*":
+            return ["*"]
+        return [origin.strip() for origin in cors_origins.split(",")]
+
+    def _load_config_file(self):
+        config_path = Path("config/settings.json")
+        if config_path.exists():
+            try:
+                with open(config_path, 'r') as f:
+                    config_data = json.load(f)
+                for key, value in config_data.items():
+                    if not hasattr(self, key) or getattr(self, key) is None:
+                        setattr(self, key, value)
+                logger.info("Loaded configuration from config/settings.json")
+            except Exception as e:
+                logger.warning(f"Could not load config/settings.json: {e}")
+
+    def _validate_settings(self):
+        warnings = []
+        if not self.OPENAI_API_KEY:
+            warnings.append("OPENAI_API_KEY is not set. OpenAI functionality will not work.")
+        if not self.NOAA_API_KEY:
+            warnings.append("NOAA_API_KEY is not set. Weather data functionality will not work.")
+        
+        for directory in [self.UPLOAD_DIR, self.OUTPUT_DIR, self.MEMORY_LOG_DIR]:
+            Path(directory).mkdir(parents=True, exist_ok=True)
+        
+        for warning in warnings:
+            logger.warning(warning)
+        
+        if warnings:
+            logger.info("Set the missing API keys in your .env file or environment variables to enable full functionality.")
+
+    def _setup_logging(self):
+        log_level = getattr(logging, self.LOG_LEVEL.upper(), logging.INFO)
+        logging.basicConfig(
+            level=log_level,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+        logging.getLogger("openai").setLevel(logging.WARNING)
+        logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+
+    def get_database_url(self) -> Optional[str]:
+        return os.getenv("DATABASE_URL")
+
+    def is_production(self) -> bool:
+        return os.getenv("ENVIRONMENT", "development").lower() == "production"
+
+    def get_api_base_url(self) -> str:
+        protocol = "https" if self.is_production() else "http"
+        return f"{protocol}://{self.HOST}:{self.PORT}"
+
+    def to_dict(self) -> dict:
+        return {
+            "openai_model": self.OPENAI_MODEL,
+            "upload_dir": self.UPLOAD_DIR,
+            "output_dir": self.OUTPUT_DIR,
+            "memory_log_dir": self.MEMORY_LOG_DIR,
+            "allowed_file_types": self.ALLOWED_FILE_TYPES,
+            "debug": self.DEBUG,
+            "host": self.HOST,
+            "port": self.PORT,
+            "cors_origins": self.CORS_ORIGINS,
+            "log_level": self.LOG_LEVEL,
+            "is_production": self.is_production(),
+            "has_openai_key": bool(self.OPENAI_API_KEY),
+            "has_noaa_key": bool(self.NOAA_API_KEY),
+            "has_maps_key": bool(self.MAPS_API_KEY)
+        }
+
+settings = Settings()
+__all__ = ["settings"]

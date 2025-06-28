@@ -1,0 +1,89 @@
+# ============================================================================
+# COPYRIGHT NOTICE
+# ============================================================================
+# All forms of intellectual documents created from this chat belong to Daniel Guzman
+# Copyright © Daniel Guzman - All Rights Reserved
+# Created: 2025-06-28
+# 
+# This code and all associated documentation, concepts, and intellectual 
+# property are the exclusive property of Daniel Guzman.
+# ============================================================================
+
+# FILE: backend/services/openai_client.py
+
+from openai import AsyncOpenAI
+import logging
+from typing import Dict, Any
+
+from ..config.settings import settings
+
+logger = logging.getLogger(__name__)
+
+class OpenAIClient:
+    def __init__(self):
+        self.api_key = settings.OPENAI_API_KEY
+        self.model = settings.OPENAI_MODEL
+        self.client = AsyncOpenAI(api_key=self.api_key)
+
+        if not self.api_key:
+            logger.warning("OPENAI_API_KEY not set in settings. OpenAI API calls will fail.")
+
+    async def analyze_document_with_context(self, context: Dict[str, Any]) -> str:
+        if not self.api_key:
+            return "Error: OpenAI API Key is not configured."
+
+        document_content = context.get("document_content", "No document content provided.")
+        user_query = context.get("user_query", "Please analyze the document.")
+        session_history = context.get("session_history", [])
+        weather_data = context.get("weather_data", "No specific weather data provided.")
+
+        messages = [
+            {"role": "system", "content": self._get_system_prompt(document_content, weather_data)},
+        ]
+
+        for msg in session_history:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+
+        messages.append({"role": "user", "content": user_query})
+
+        logger.info(f"Sending request to OpenAI with model: {self.model}")
+        try:
+            chat_completion = await self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=2000,
+            )
+            response_content = chat_completion.choices[0].message.content
+            logger.debug(f"OpenAI raw response: {response_content}")
+            return response_content
+
+        except Exception as e:
+            logger.error(f"Error calling OpenAI API: {e}")
+            raise
+
+    def _get_system_prompt(self, document_content: str, weather_data: str) -> str:
+        return f"""
+        You are Stormwater-AI, an expert assistant specializing in stormwater management, hydrology, environmental regulations, and civil engineering.
+        Your primary role is to analyze provided documents and user queries related to stormwater, offering precise, accurate, and comprehensive answers.
+
+        **Instructions:**
+        1.  **Analyze Documents:** Carefully read the DOCUMENT_CONTENT provided by the user.
+        2.  **Answer Queries:** Respond directly and thoroughly to the USER_QUERY, drawing information primarily from the DOCUMENT_CONTENT.
+        3.  **Contextual Awareness:** Use SESSION_HISTORY to understand the ongoing conversation and WEATHER_DATA for relevant environmental context, if provided and applicable to the query.
+        4.  **Expertise:** Frame your responses with the authority and knowledge of a stormwater engineering expert.
+        5.  **Clarity and Conciseness:** Provide clear, concise, and actionable information. Avoid jargon where simpler terms suffice, but use technical terms correctly when necessary.
+        6.  **No Hallucinations:** If information is not available in the provided context, state that clearly rather than making assumptions.
+        7.  **Safety and Compliance:** Emphasize best practices, regulatory compliance, and environmental protection in your advice.
+        8.  **Formatting:** Use markdown for readability (e.g., bolding, bullet points) where appropriate.
+
+        ---
+        **DOCUMENT_CONTENT:**
+        {document_content}
+
+        ---
+        **CURRENT_WEATHER_DATA (if relevant to user query):**
+        {weather_data}
+
+        ---
+        """

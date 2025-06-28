@@ -1,0 +1,68 @@
+# ============================================================================
+# COPYRIGHT NOTICE
+# ============================================================================
+# All forms of intellectual documents created from this chat belong to Daniel Guzman
+# Copyright © Daniel Guzman - All Rights Reserved
+# Created: 2025-06-28
+# 
+# This code and all associated documentation, concepts, and intellectual 
+# property are the exclusive property of Daniel Guzman.
+# ============================================================================
+
+# FILE: backend/services/parser.py
+
+from typing import Optional
+import os
+import logging
+from PyPDF2 import PdfReader
+from docx import Document as DocxDocument
+from ..config.settings import settings
+
+logger = logging.getLogger(__name__)
+
+async def parse_document(file_path: str) -> Optional[str]:
+    file_extension = os.path.splitext(file_path)[1].lower()
+    logger.info(f"Attempting to parse file: {file_path} with extension: {file_extension}")
+
+    if file_extension == ".pdf":
+        return _parse_pdf(file_path)
+    elif file_extension == ".docx":
+        return _parse_docx(file_path)
+    elif file_extension == ".txt":
+        return _parse_txt(file_path)
+    else:
+        logger.warning(f"Unsupported file type for parsing: {file_extension}")
+        return None
+
+def _parse_pdf(file_path: str) -> Optional[str]:
+    try:
+        with open(file_path, "rb") as file:
+            reader = PdfReader(file)
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text() or ""
+        logger.info(f"Successfully parsed PDF: {file_path}")
+        return text
+    except Exception as e:
+        logger.error(f"Error parsing PDF file {file_path}: {e}")
+        return None
+
+def _parse_docx(file_path: str) -> Optional[str]:
+    try:
+        doc = DocxDocument(file_path)
+        text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+        logger.info(f"Successfully parsed DOCX: {file_path}")
+        return text
+    except Exception as e:
+        logger.error(f"Error parsing DOCX file {file_path}: {e}")
+        return None
+
+def _parse_txt(file_path: str) -> Optional[str]:
+    try:
+        with open(file_path, "r", encoding="utf-8") as file:
+            text = file.read()
+        logger.info(f"Successfully parsed TXT: {file_path}")
+        return text
+    except Exception as e:
+        logger.error(f"Error reading TXT file {file_path}: {e}")
+        return None

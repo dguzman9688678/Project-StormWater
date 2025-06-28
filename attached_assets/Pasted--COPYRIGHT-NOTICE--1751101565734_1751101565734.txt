@@ -1,0 +1,118 @@
+# ============================================================================
+# COPYRIGHT NOTICE
+# ============================================================================
+# All forms of intellectual documents created from this chat belong to Daniel Guzman
+# Copyright © Daniel Guzman - All Rights Reserved
+# Created: 2025-06-28
+# 
+# This code and all associated documentation, concepts, and intellectual 
+# property are the exclusive property of Daniel Guzman.
+# ============================================================================
+
+# FILE: backend/routes/analysis.py
+
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status
+from typing import List, Optional
+from pydantic import BaseModel, Field
+import os
+import logging
+
+from ..services.parser import parse_document
+from ..services.openai_client import OpenAIClient
+from ..services.noaa_client import NOAAClient
+from ..memory.session_store import SessionStore, get_session_id
+from ..memory.long_term_store import LongTermMemoryStore
+from ..config.settings import settings
+from ..models.request_models import AnalyzeRequest, MemoryMessage
+
+router = APIRouter()
+logger = logging.getLogger(__name__)
+
+openai_client = OpenAIClient()
+noaa_client = NOAAClient()
+session_store = SessionStore()
+long_term_memory_store = LongTermMemoryStore(settings.MEMORY_LOG_PATH)
+
+@router.post("/analyze", summary="Analyze uploaded stormwater documents")
+async def analyze_document(
+    file: UploadFile = File(..., description="Stormwater document to analyze (PDF, DOCX, TXT)"),
+    user_query: str = Field(..., description="User's specific question or analysis request for the document."),
+    session_id: str = Depends(get_session_id)
+):
+    logger.info(f"Analysis request received for session: {session_id}")
+    file_location = None
+    try:
+        file_extension = os.path.splitext(file.filename)[1].lower()
+        if file_extension not in settings.ALLOWED_FILE_TYPES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported file type: {file_extension}. Allowed types are: {', '.join(settings.ALLOWED_FILE_TYPES)}"
+            )
+
+        file_location = os.path.join(settings.UPLOAD_DIR, file.filename)
+        with open(file_location, "wb") as f:
+            f.write(await file.read())
+        logger.info(f"File saved to {file_location}")
+
+        document_content = await parse_document(file_location)
+        if not document_content:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to parse document content."
+            )
+        logger.info("Document parsed successfully.")
+
+        session_history = session_store.get_messages(session_id)
+        
+        weather_data = None
+        try:
+            if "rain" in user_query.lower() or "weather" in user_query.lower() or "precipitation" in user_query.lower():
+                weather_data = await noaa_client.get_recent_rain_data("USC00045100")
+                logger.info(f"Retrieved NOAA weather data: {weather_data}")
+        except Exception as e:
+            logger.warning(f"Could not fetch NOAA weather data: {e}")
+            weather_data = "No current weather data available or relevant."
+
+        full_context = {
+            "document_content": document_content,
+            "user_query": user_query,
+            "session_history": session_history,
+            "weather_data": weather_data
+        }
+
+        analysis_result = await openai_client.analyze_document_with_context(full_context)
+        logger.info("OpenAI analysis complete.")
+
+        session_store.add_message(session_id, "user", user_query)
+        session_store.add_message(session_id, "assistant", analysis_result)
+        long_term_memory_store.add_entry(session_id, user_query, analysis_result)
+        logger.info("Interaction stored in session and long-term memory.")
+
+        return JSONResponse(content={"analysis": analysis_result, "session_id": session_id})
+
+    except HTTPException as e:
+        logger.error(f"HTTPException in /analyze: {e.detail}")
+        raise e
+    except Exception as e:
+        logger.exception("An unexpected error occurred during analysis.")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An internal server error occurred: {str(e)}")
+    finally:
+        if file_location and os.path.exists(file_location):
+            os.remove(file_location)
+            logger.info(f"Temporary file {file_location} removed.")
+
+@router.get("/memory/{session_id}", response_model=List[MemoryMessage], summary="Retrieve conversation memory for a session")
+async def get_session_memory(session_id: str):
+    logger.info(f"Request to retrieve memory for session: {session_id}")
+    messages = session_store.get_messages(session_id)
+    if not messages:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session memory not found.")
+    return messages
+
+@router.delete("/memory/{session_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Clear conversation memory for a session")
+async def clear_session_memory(session_id: str):
+    logger.info(f"Request to clear memory for session: {session_id}")
+    if session_store.clear_messages(session_id):
+        long_term_memory_store.clear_session_entries(session_id)
+        return {"message": "Session memory cleared."}
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session memory not found.")
