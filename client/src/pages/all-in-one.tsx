@@ -1281,23 +1281,53 @@ End of Report\\par
                       )}
                     </div>
                     
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={currentMessage}
-                        onChange={(e) => setCurrentMessage(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                        placeholder="Ask Claude about your documents or stormwater guidance..."
-                        className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={isChatting}
-                      />
-                      <Button 
-                        onClick={sendMessage} 
-                        disabled={!currentMessage.trim() || isChatting}
-                        className="px-4"
-                      >
-                        Send
-                      </Button>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={currentMessage}
+                          onChange={(e) => setCurrentMessage(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                          placeholder="Ask Claude about your documents or stormwater guidance..."
+                          className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={isChatting}
+                        />
+                        <Button 
+                          onClick={sendMessage} 
+                          disabled={!currentMessage.trim() || isChatting}
+                          className="px-4"
+                        >
+                          Send
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <span>Upload files for analysis:</span>
+                        <input
+                          type="file"
+                          onChange={(e) => {
+                            const selectedFiles = Array.from(e.target.files || []);
+                            if (selectedFiles.length > 0) {
+                              setFiles(selectedFiles);
+                              uploadMutation.mutate({ files: selectedFiles, description: undefined });
+                            }
+                          }}
+                          multiple
+                          accept=".pdf,.docx,.doc,.txt,.xlsx,.xls,.csv,.json,.xml,.rtf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.html,.htm,.md,.log"
+                          className="hidden"
+                          id="chat-file-upload"
+                          disabled={uploadMutation.isPending}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => document.getElementById('chat-file-upload')?.click()}
+                          disabled={uploadMutation.isPending}
+                        >
+                          <Upload className="w-4 h-4 mr-1" />
+                          {uploadMutation.isPending ? 'Uploading...' : 'Choose Files'}
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
