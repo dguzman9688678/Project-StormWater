@@ -13,6 +13,7 @@ import { api } from "@/lib/api";
 export default function SimpleAnalysisPage() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [question, setQuestion] = useState("");
+  const [analysisMode, setAnalysisMode] = useState<'all' | 'single'>('all');
   const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -28,14 +29,35 @@ export default function SimpleAnalysisPage() {
     queryFn: () => api.getAnalyses(),
   });
 
-  // Analysis mutation
-  const analysisMutation = useMutation({
+  // Analysis mutation for comprehensive analysis
+  const comprehensiveAnalysisMutation = useMutation({
+    mutationFn: (query: string) => api.analyzeAllDocuments(query),
+    onSuccess: () => {
+      toast({
+        title: "Analysis Complete",
+        description: "All documents have been analyzed successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/analyses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/recommendations"] });
+      setQuestion("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Failed to analyze documents",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Single document analysis mutation (backup option)
+  const singleAnalysisMutation = useMutation({
     mutationFn: ({ documentId, query }: { documentId: number; query: string }) =>
       api.analyzeDocument(documentId, query),
     onSuccess: () => {
       toast({
         title: "Analysis Complete",
-        description: "Your document has been analyzed successfully.",
+        description: "Document has been analyzed successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/analyses"] });
       queryClient.invalidateQueries({ queryKey: ["/api/recommendations"] });
@@ -52,19 +74,32 @@ export default function SimpleAnalysisPage() {
   });
 
   const handleAnalyze = () => {
-    if (!selectedDocumentId || !question.trim()) {
+    if (!question.trim()) {
       toast({
-        title: "Missing Information",
-        description: "Please select a document and enter your question.",
+        title: "Question Required",
+        description: "Please enter a question to analyze.",
         variant: "destructive",
       });
       return;
     }
 
-    analysisMutation.mutate({
-      documentId: selectedDocumentId,
-      query: question,
-    });
+    if (analysisMode === 'single' && !selectedDocumentId) {
+      toast({
+        title: "Document Required",
+        description: "Please select a document to analyze.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (analysisMode === 'all') {
+      comprehensiveAnalysisMutation.mutate(question);
+    } else {
+      singleAnalysisMutation.mutate({
+        documentId: selectedDocumentId,
+        query: question,
+      });
+    }
   };
 
   const formatDate = (date: string) => {
@@ -77,7 +112,8 @@ export default function SimpleAnalysisPage() {
     });
   };
 
-  const getDocumentTitle = (documentId: number) => {
+  const getDocumentTitle = (documentId: number | null) => {
+    if (!documentId) return "No document selected";
     const doc = documents?.find((d: any) => d.id === documentId);
     return doc ? doc.originalName : `Document ${documentId}`;
   };
@@ -90,7 +126,7 @@ export default function SimpleAnalysisPage() {
           Document Analysis
         </h1>
         <p className="text-sm md:text-base text-muted-foreground">
-          Upload any document and ask questions to get instant answers with citations
+          Upload documents and ask questions to get comprehensive answers with citations from all your stormwater documents
         </p>
       </div>
 
@@ -155,28 +191,66 @@ export default function SimpleAnalysisPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Document Selection */}
+              {(!documents || documents.length === 0) && (
+                <Alert>
+                  <AlertDescription>
+                    Upload documents first to start asking questions.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Analysis Mode Selection */}
               {documents && documents.length > 0 && (
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Select Document to Analyze
-                  </label>
-                  <div className="grid grid-cols-1 gap-2">
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Analysis Mode</label>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant={analysisMode === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setAnalysisMode('all')}
+                      className="flex-1"
+                    >
+                      All Documents
+                    </Button>
+                    <Button
+                      variant={analysisMode === 'single' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setAnalysisMode('single')}
+                      className="flex-1"
+                    >
+                      Single Document
+                    </Button>
+                  </div>
+                  {analysisMode === 'all' && (
+                    <p className="text-xs text-muted-foreground">
+                      Analyzes all {documents.length} documents together for comprehensive answers
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Single Document Selection */}
+              {analysisMode === 'single' && documents && documents.length > 0 && (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Select Document</label>
+                  <div className="space-y-2">
                     {documents.map((doc: any) => (
-                      <button
+                      <div 
                         key={doc.id}
-                        onClick={() => setSelectedDocumentId(doc.id)}
-                        className={`p-3 text-left border rounded transition-colors ${
-                          selectedDocumentId === doc.id
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:bg-muted'
+                        className={`p-3 border rounded cursor-pointer transition-colors ${
+                          selectedDocumentId === doc.id 
+                            ? 'border-primary bg-primary/5' 
+                            : 'border-border hover:border-primary/50'
                         }`}
+                        onClick={() => setSelectedDocumentId(doc.id)}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-medium truncate">{doc.originalName}</span>
-                          <Badge variant="outline">{doc.category}</Badge>
+                          <span className="text-sm font-medium truncate">{doc.originalName}</span>
+                          <Badge variant="outline" className="text-xs ml-2">
+                            {doc.category}
+                          </Badge>
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -197,11 +271,11 @@ export default function SimpleAnalysisPage() {
 
               <Button 
                 onClick={handleAnalyze}
-                disabled={!selectedDocumentId || !question.trim() || analysisMutation.isPending}
+                disabled={(!selectedDocumentId && analysisMode === 'single') || !question.trim() || comprehensiveAnalysisMutation.isPending || singleAnalysisMutation.isPending}
                 className="w-full"
                 size="lg"
               >
-                {analysisMutation.isPending ? (
+                {(comprehensiveAnalysisMutation.isPending || singleAnalysisMutation.isPending) ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Analyzing...

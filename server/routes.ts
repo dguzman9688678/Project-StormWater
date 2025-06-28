@@ -248,6 +248,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Comprehensive analysis across all documents
+  app.post("/api/analyze-all", async (req, res) => {
+    try {
+      const { query } = req.body;
+      
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ error: "Query is required" });
+      }
+
+      // Get all documents
+      const documents = await storage.getAllDocuments();
+      
+      if (documents.length === 0) {
+        return res.status(400).json({ error: "No documents available for analysis" });
+      }
+
+      // Combine content from all documents for comprehensive analysis
+      const combinedContent = documents.map(doc => 
+        `Document: ${doc.originalName}\nContent: ${doc.content}\n---\n`
+      ).join('\n');
+
+      // Create a comprehensive document object for analysis
+      const comprehensiveDoc = {
+        id: 0, // Special ID for comprehensive analysis
+        originalName: "All Documents Combined",
+        content: combinedContent,
+        category: "comprehensive",
+        description: `Analysis across ${documents.length} documents`,
+        filename: "comprehensive-analysis",
+        fileSize: combinedContent.length,
+        uploadedAt: new Date()
+      };
+
+      const analysisResult = await aiAnalyzer.analyzeDocument(comprehensiveDoc, query);
+      
+      // Store the analysis with special handling for comprehensive analysis
+      const aiAnalysisData = {
+        documentId: documents[0].id, // Use first document ID as reference
+        query: `Comprehensive Analysis: ${query}`,
+        analysis: analysisResult.analysis,
+        insights: analysisResult.insights ? [...analysisResult.insights] : [],
+      };
+      
+      const analysis = await storage.createAiAnalysis(aiAnalysisData);
+
+      // Generate recommendations if any were found
+      if (analysisResult.recommendations.length > 0) {
+        await recommendationGenerator.generateFromAnalysis(analysisResult, documents[0].id);
+      }
+
+      // Return analysis with source document information
+      res.json({
+        ...analysis,
+        sourceDocuments: documents.map(doc => ({
+          id: doc.id,
+          name: doc.originalName,
+          category: doc.category
+        }))
+      });
+    } catch (error) {
+      console.error('Comprehensive analysis error:', error);
+      res.status(500).json({ error: "Failed to analyze all documents" });
+    }
+  });
+
   // Global search
   app.get("/api/search", async (req, res) => {
     try {

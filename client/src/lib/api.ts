@@ -44,4 +44,10 @@ export const api = {
   search: (query: string) => {
     return fetch(`/api/search?q=${encodeURIComponent(query)}`).then(res => res.json());
   },
+
+  analyzeAllDocuments: (query: string) => {
+    return apiRequest("POST", `/api/analyze-all`, {
+      query,
+    });
+  },
 };
