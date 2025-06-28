@@ -150,7 +150,7 @@ export class MemStorage implements IStorage {
       ...analysis,
       id: this.currentAnalysisId++,
       createdAt: new Date(),
-      insights: Array.isArray(analysis.insights) ? analysis.insights : null,
+      insights: Array.isArray(analysis.insights) ? analysis.insights as string[] : null,
     };
     this.aiAnalyses.set(aiAnalysis.id, aiAnalysis);
     return aiAnalysis;
