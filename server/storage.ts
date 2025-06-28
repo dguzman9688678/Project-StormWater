@@ -350,11 +350,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAiAnalysis(analysis: InsertAiAnalysis): Promise<AiAnalysis> {
-    const [aiAnalysis] = await db
-      .insert(aiAnalyses)
-      .values(analysis)
-      .returning();
-    return aiAnalysis;
+    try {
+      const insertData = {
+        documentId: analysis.documentId,
+        query: analysis.query,
+        analysis: analysis.analysis,
+        insights: JSON.stringify(analysis.insights || [])
+      };
+      
+      const [aiAnalysis] = await db
+        .insert(aiAnalyses)
+        .values(insertData)
+        .returning();
+      return aiAnalysis;
+    } catch (error) {
+      console.error('Database insert error:', error);
+      throw error;
+    }
   }
 
   async globalSearch(query: string): Promise<{
@@ -455,4 +467,4 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new MemStorage();

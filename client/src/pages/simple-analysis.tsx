@@ -113,7 +113,7 @@ export default function SimpleAnalysisPage() {
   };
 
   const getDocumentTitle = (documentId: number | null) => {
-    if (!documentId) return "No document selected";
+    if (!documentId) return "All Documents";
     const doc = documents?.find((d: any) => d.id === documentId);
     return doc ? doc.originalName : `Document ${documentId}`;
   };
