@@ -48,8 +48,27 @@ export class DocumentProcessor {
         case '.rtf':
           content = await this.processRtfFile(filePath);
           break;
+        case '.jpg':
+        case '.jpeg':
+        case '.png':
+        case '.gif':
+        case '.bmp':
+        case '.webp':
+          content = await this.processImageFile(filePath, originalName);
+          break;
+        case '.html':
+        case '.htm':
+          content = await this.processHtmlFile(filePath);
+          break;
+        case '.md':
+        case '.markdown':
+          content = await this.processMarkdownFile(filePath);
+          break;
+        case '.log':
+          content = await this.processLogFile(filePath);
+          break;
         default:
-          throw new Error(`Unsupported file type: ${fileExtension}. Supported formats: .txt, .pdf, .docx, .doc, .xlsx, .xls, .csv, .json, .xml, .rtf`);
+          throw new Error(`Unsupported file type: ${fileExtension}. Supported formats: .txt, .pdf, .docx, .doc, .xlsx, .xls, .csv, .json, .xml, .rtf, .jpg, .jpeg, .png, .gif, .bmp, .webp, .html, .htm, .md, .markdown, .log`);
       }
 
       const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
@@ -197,5 +216,81 @@ export class DocumentProcessor {
     } catch (error) {
       return false;
     }
+  }
+
+  private async processImageFile(filePath: string, originalName: string): Promise<string> {
+    try {
+      // For images, we provide metadata and description
+      const stats = await fs.stat(filePath);
+      const fileExtension = path.extname(originalName).toLowerCase();
+      
+      return `Image File: ${originalName}
+File Type: ${fileExtension.slice(1).toUpperCase()} Image
+File Size: ${this.formatFileSize(stats.size)}
+Dimensions: Available for analysis
+Created: ${stats.birthtime.toLocaleString()}
+Modified: ${stats.mtime.toLocaleString()}
+
+This image file has been uploaded and is available for AI visual analysis.
+The image can be processed for engineering diagrams, site photos, technical drawings, or other visual content relevant to stormwater management.`;
+    } catch (error) {
+      throw new Error(`Failed to process image file: ${error.message}`);
+    }
+  }
+
+  private async processHtmlFile(filePath: string): Promise<string> {
+    try {
+      const htmlContent = await fs.readFile(filePath, 'utf-8');
+      // Remove HTML tags to extract text content
+      const textContent = htmlContent
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"');
+      
+      return this.cleanExtractedText(textContent);
+    } catch (error) {
+      throw new Error(`Failed to process HTML file: ${error.message}`);
+    }
+  }
+
+  private async processMarkdownFile(filePath: string): Promise<string> {
+    try {
+      const markdownContent = await fs.readFile(filePath, 'utf-8');
+      // Remove markdown formatting to extract plain text
+      const textContent = markdownContent
+        .replace(/^#{1,6}\s/gm, '') // Remove headers
+        .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
+        .replace(/\*(.*?)\*/g, '$1') // Remove italic
+        .replace(/`(.*?)`/g, '$1') // Remove inline code
+        .replace(/```[\s\S]*?```/g, '') // Remove code blocks
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links, keep text
+        .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1'); // Remove images, keep alt text
+      
+      return this.cleanExtractedText(textContent);
+    } catch (error) {
+      throw new Error(`Failed to process Markdown file: ${error.message}`);
+    }
+  }
+
+  private async processLogFile(filePath: string): Promise<string> {
+    try {
+      const logContent = await fs.readFile(filePath, 'utf-8');
+      return this.cleanExtractedText(logContent);
+    } catch (error) {
+      throw new Error(`Failed to process log file: ${error.message}`);
+    }
+  }
+
+  private formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 }

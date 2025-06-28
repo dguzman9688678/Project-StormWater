@@ -23,6 +23,13 @@ export default function Dashboard() {
   const { data: recentAnalyses, isLoading: analysesLoading } = useQuery({
     queryKey: ["/api/analyses"],
     queryFn: () => api.getAnalyses(),
+    select: (data) => {
+      // Only show current session analyses - no old history
+      const today = new Date().toDateString();
+      return data?.filter((analysis: any) => 
+        new Date(analysis.createdAt).toDateString() === today
+      ) || [];
+    }
   });
 
   return (

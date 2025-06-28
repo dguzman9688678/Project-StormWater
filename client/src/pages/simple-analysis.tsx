@@ -27,6 +27,13 @@ export default function SimpleAnalysisPage() {
   const { data: analyses, isLoading: analysesLoading } = useQuery({
     queryKey: ["/api/analyses"],
     queryFn: () => api.getAnalyses(),
+    select: (data) => {
+      // Only show analyses from current session - no old history
+      const today = new Date().toDateString();
+      return data?.filter((analysis: any) => 
+        new Date(analysis.createdAt).toDateString() === today
+      ) || [];
+    }
   });
 
   // Analysis mutation for comprehensive analysis
