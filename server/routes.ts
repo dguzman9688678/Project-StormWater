@@ -28,6 +28,26 @@ const chatService = new ChatService();
 const webSearchService = new WebSearchService();
 const pythonInterpreter = new PythonInterpreter();
 
+// Helper function to detect what calculations are needed based on content
+function detectCalculationNeeds(content: string, description?: string): string[] {
+  const text = (content + ' ' + (description || '')).toLowerCase();
+  const calculations = [];
+
+  if (text.includes('runoff') || text.includes('flow') || text.includes('drainage')) {
+    calculations.push('runoff_analysis');
+  }
+  if (text.includes('bmp') || text.includes('detention') || text.includes('retention')) {
+    calculations.push('bmp_sizing');
+  }
+  if (text.includes('erosion') || text.includes('sediment')) {
+    calculations.push('erosion_control');
+  }
+  if (text.includes('pipe') || text.includes('culvert') || text.includes('sizing')) {
+    calculations.push('hydraulic_sizing');
+  }
+
+  return calculations;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize with template recommendations
@@ -271,21 +291,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allDocuments = await storage.getAllDocuments();
       const analysisResult = await aiAnalyzer.analyzeDocument(tempDocument, description);
 
-      // Create temporary analysis result
+      // Perform relevant Python calculations based on document content
+      let pythonResults: any = null;
+      try {
+        // Check if document content suggests stormwater calculations are needed
+        const needsCalculations = detectCalculationNeeds(tempDocument.content, description);
+        
+        if (needsCalculations.length > 0) {
+          console.log('🧮 Performing stormwater calculations based on analysis');
+          pythonResults = await pythonInterpreter.executeStormwaterAnalysis(
+            tempDocument.content,
+            { 
+              filename: tempDocument.originalName,
+              description: description,
+              calculations: needsCalculations
+            }
+          );
+        }
+      } catch (error) {
+        console.warn('Python calculations failed:', error);
+      }
+
+      // Enhance analysis with Python results if available
+      let enhancedAnalysis = analysisResult.analysis;
+      let enhancedInsights = [...analysisResult.insights];
+      let enhancedRecommendations = [...analysisResult.recommendations];
+
+      if (pythonResults && pythonResults.success) {
+        enhancedAnalysis += `\n\n**TECHNICAL CALCULATIONS:**\n${pythonResults.output}`;
+        
+        if (pythonResults.dataAnalysis) {
+          enhancedInsights.push(
+            `Calculation Results: ${pythonResults.dataAnalysis.summary}`,
+            ...pythonResults.dataAnalysis.insights
+          );
+          
+          // Add calculation-based recommendations
+          pythonResults.dataAnalysis.recommendations.forEach((rec: string) => {
+            enhancedRecommendations.push({
+              title: "Calculated Recommendation",
+              content: rec,
+              category: 'stormwater' as const,
+              subcategory: 'calculations',
+              citation: 'Python Engineering Calculations'
+            });
+          });
+        }
+      }
+
+      // Create comprehensive analysis result
       const tempAnalysis = {
         id: Date.now(),
         documentId: tempDocument.id,
         query: description || "Document analysis",
-        analysis: analysisResult.analysis,
-        insights: analysisResult.insights,
-        recommendations: analysisResult.recommendations,
-        createdAt: new Date()
+        analysis: enhancedAnalysis,
+        insights: enhancedInsights,
+        recommendations: enhancedRecommendations,
+        createdAt: new Date(),
+        pythonResults: pythonResults
       };
 
       res.json({
         document: tempDocument,
         analysis: tempAnalysis,
-        recommendations: analysisResult.recommendations
+        recommendations: enhancedRecommendations,
+        pythonResults: pythonResults
       });
 
     } catch (error) {

@@ -26,6 +26,16 @@ interface AnalysisPreviewProps {
       name: string;
       type: string;
     };
+    pythonResults?: {
+      success: boolean;
+      output?: string;
+      dataAnalysis?: {
+        summary: string;
+        insights: string[];
+        recommendations: string[];
+      };
+      plots?: string[];
+    };
   } | null;
 }
 

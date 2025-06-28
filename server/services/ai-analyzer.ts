@@ -72,8 +72,10 @@ ${query ? `**User Question**: ${query}` : ''}
 **COMPREHENSIVE ANALYSIS INSTRUCTIONS:**
 1. **Site Assessment**: Based on filename and typical construction issues
 2. **Regulatory Compliance**: Reference specific codes from the document library
-3. **BMP Requirements**: Recommend appropriate Best Management Practices
-4. **Implementation Guide**: Provide specific procedures and compliance requirements
+3. **BMP Specifications**: Recommend appropriate BMPs with detailed technical specifications
+4. **Materials & Installation**: Provide complete materials lists, quantities, and installation procedures
+5. **Implementation Timeline**: Include installation sequence, timing, and maintenance requirements
+6. **Cost Analysis**: Provide material and labor estimates where applicable
 
 **Format your response as:**
 ANALYSIS: [Professional assessment based on typical construction site conditions]
@@ -81,7 +83,14 @@ ANALYSIS: [Professional assessment based on typical construction site conditions
 INSIGHTS: [Key technical insights with document citations]
 
 RECOMMENDATIONS:
-STORMWATER: [Title] - [Detailed professional recommendation with specific document references]`;
+STORMWATER: [Title] - [Comprehensive recommendation including:
+- BMP Type and Technical Specifications
+- Complete Materials List (quantities, grades, specifications)
+- Step-by-Step Installation Instructions
+- Quality Control and Inspection Requirements
+- Maintenance Schedule and Procedures
+- Regulatory Compliance Citations
+- Material and Labor Cost Estimates]`;
 
       const response = await this.anthropic!.messages.create({
         model: 'claude-sonnet-4-20250514',
@@ -119,9 +128,10 @@ ${query ? `**User Question**: ${query}` : ''}
 **COMPREHENSIVE ANALYSIS INSTRUCTIONS:**
 1. **Visual Assessment**: Identify all visible stormwater issues in the image
 2. **Regulatory Compliance**: Reference specific codes and standards from the document library
-3. **BMP Requirements**: Recommend appropriate Best Management Practices
-4. **Permit Compliance**: Address NPDES and other permit requirements
-5. **Implementation Guide**: Provide specific installation and maintenance procedures
+3. **BMP Requirements**: Recommend appropriate Best Management Practices with detailed specifications
+4. **Materials & Installation**: Provide complete materials lists, quantities, and step-by-step installation instructions
+5. **Implementation Timeline**: Include installation sequence, timing, and maintenance schedules
+6. **Cost Estimation**: Provide material and labor cost estimates where possible
 
 **Format your response as:**
 ANALYSIS: [Detailed visual analysis of site conditions and stormwater issues]
@@ -129,7 +139,13 @@ ANALYSIS: [Detailed visual analysis of site conditions and stormwater issues]
 INSIGHTS: [Key technical insights with document citations]
 
 RECOMMENDATIONS:
-STORMWATER: [Title] - [Detailed professional recommendation with specific document references]`;
+STORMWATER: [Title] - [Detailed recommendation including:
+- BMP Type and Purpose
+- Materials List (with quantities and specifications)
+- Installation Instructions (step-by-step)
+- Maintenance Requirements
+- Regulatory Compliance Citations
+- Cost Estimates (if available)]`;
 
       const response = await this.anthropic!.messages.create({
         model: 'claude-sonnet-4-20250514',
@@ -297,7 +313,40 @@ PROFESSIONAL SITE ASSESSMENT: [Comprehensive evaluation with regulatory context 
 CRITICAL FINDINGS: [Priority issues requiring immediate professional attention with risk assessment]
 
 PROFESSIONAL RECOMMENDATIONS:
-QSD/CPESC RECOMMENDATION: [Professional BMP Title] - [Detailed implementation specifications with materials, installation standards, inspection requirements, regulatory compliance notes, and professional liability considerations]`;
+QSD/CPESC RECOMMENDATION: [Professional BMP Title] - [Complete implementation package including:
+
+**BMP SPECIFICATIONS:**
+- Type and purpose of BMP
+- Technical design criteria and sizing calculations
+- Performance standards and efficiency targets
+
+**MATERIALS LIST:**
+- Itemized list with quantities, grades, and specifications
+- Supplier recommendations and material standards
+- Alternative materials for different budgets
+
+**INSTALLATION INSTRUCTIONS:**
+- Step-by-step installation procedures
+- Equipment and labor requirements
+- Quality control checkpoints and testing procedures
+- Installation sequence and timing considerations
+
+**MAINTENANCE PROGRAM:**
+- Inspection schedule and checklists
+- Routine maintenance procedures and frequencies
+- Performance monitoring and documentation requirements
+- Repair and replacement protocols
+
+**REGULATORY COMPLIANCE:**
+- Applicable permit requirements and citations
+- Documentation and reporting requirements
+- Inspection and certification procedures
+
+**COST ANALYSIS:**
+- Material costs with unit pricing
+- Labor estimates and installation time
+- Long-term maintenance costs
+- Cost-benefit analysis and alternatives]`;
 
     const response = await this.anthropic!.messages.create({
       model: 'claude-sonnet-4-20250514',
@@ -341,13 +390,83 @@ Always cite specific documents, sections, and standards from the provided librar
       return "No reference documents available in the library.";
     }
 
-    return referenceDocs.map((doc, index) => {
+    const referenceContext = referenceDocs.map((doc, index) => {
       const preview = doc.content.substring(0, 500);
       return `[${index + 1}] Document: "${doc.originalName}"
 Category: ${doc.category}
 Content Preview: ${preview}${doc.content.length > 500 ? '...' : ''}
 ---`;
     }).join('\n');
+
+    // Add comprehensive BMP implementation database for detailed recommendations
+    const bmpImplementationGuide = `
+
+**COMPREHENSIVE BMP IMPLEMENTATION DATABASE:**
+
+**EROSION CONTROL BMPs:**
+
+Silt Fence Installation:
+- Materials: Geotextile fabric (ASTM D4632, min 200 lb tensile), steel T-posts (6 ft), hardware cloth, zip ties
+- Quantities: 1 post per 6-8 feet, fabric height 36 inches
+- Installation: Dig 6-inch trench, install posts 3 feet deep, attach fabric with 6 inches above grade
+- Cost: $3-5 per linear foot (materials and labor)
+
+Straw Wattles:
+- Materials: Certified weed-free straw, biodegradable netting, wooden stakes (2x2 inches)
+- Installation: Create 6-inch deep trench on contour, stake every 4 feet, overlap ends 2 feet
+- Maintenance: Replace after 90% breakdown or loss of function
+- Cost: $8-12 per linear foot
+
+Hydroseeding:
+- Materials: Seed mix (2-4 lbs/1000 sf), wood fiber mulch (1500-2000 lbs/acre), tackifier
+- Application: Mix in hydro-tank, spray evenly, water if no rain within 48 hours
+- Timing: Optimal planting seasons (spring/fall), avoid extreme weather
+- Cost: $0.15-0.30 per square foot
+
+**SEDIMENT CONTROL BMPs:**
+
+Sediment Basin Construction:
+- Sizing: 1800 cf per acre of drainage area (minimum 2-year, 24-hour storm)
+- Materials: Excavation, outlet structure (riser pipe/orifice), emergency spillway, rip-rap
+- Installation: Compact bottom, install outlet, stabilize embankment
+- Maintenance: Remove sediment when 50% capacity reached
+- Cost: $2-8 per cubic foot
+
+Check Dam Installation:
+- Materials: Rock (6-18 inch diameter), filter fabric, geotextile
+- Spacing: 200-300 feet apart in channels, center notch 12 inches deep
+- Installation: Excavate foundation, place fabric, install rock with center low
+- Cost: $50-200 per check dam
+
+**INFILTRATION BMPs:**
+
+Bioretention Cell:
+- Sizing: 5-10% of drainage area, minimum 18-inch ponding depth
+- Materials: Engineered soil mix (sand/topsoil/compost), plants, underdrain system
+- Components: Pretreatment, ponding area, soil media (36-48 inches), underdrain
+- Plants: Native species, salt/pollution tolerant, varied root depths
+- Cost: $5-15 per square foot
+
+Rain Garden:
+- Sizing: 20-30% of roof drainage area
+- Materials: Amended soil (50% sand, 30% topsoil, 20% compost), native plants
+- Installation: Excavate 6-18 inches deep, install overflow, plant selection
+- Maintenance: Weeding, mulching, plant replacement as needed
+- Cost: $3-8 per square foot
+
+**MATERIAL SPECIFICATIONS:**
+- Geotextile: ASTM D4632, minimum 200 lb tensile strength, UV stable
+- Aggregate: ASTM C33, clean washed stone, 1.5-2.5 inch diameter for rip-rap
+- Steel Posts: Galvanized T-posts, 6-foot length, driven 3 feet minimum
+- Seed Mix: Certified, 90% germination, appropriate for local climate
+- Filter Fabric: Non-woven, 140 gsm minimum, high flow rate
+
+**INSTALLATION TIMING:**
+- Best: Dry weather periods, avoid frozen ground
+- Seeding: Spring (March-May) or Fall (September-November)
+- Avoid: During rain events, extreme heat, or winter months`;
+
+    return referenceContext + bmpImplementationGuide;
   }
 
   private async analyzeTextDocument(document: Document, query?: string): Promise<AnalysisResult> {
