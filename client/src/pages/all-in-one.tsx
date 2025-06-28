@@ -1,4 +1,6 @@
 import { useState, useCallback } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Upload, FileText, Brain, Download, CheckCircle, AlertCircle, Loader2, Search, BarChart3, Bookmark, BookmarkCheck, Trash2, X, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,7 +35,14 @@ export default function AllInOnePage() {
   const [description, setDescription] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
+  const [selectedFormat, setSelectedFormat] = useState("");
+  const [downloadType, setDownloadType] = useState<"single" | "all">("single");
+  const [selectedRecommendation, setSelectedRecommendation] = useState<any>(null);
   const [saveToLibrary, setSaveToLibrary] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date}>>([]);
+  const [currentMessage, setCurrentMessage] = useState("");
+  const [isChatting, setIsChatting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -60,6 +69,35 @@ export default function AllInOnePage() {
     queryKey: ["/api/search", searchQuery],
     queryFn: () => searchQuery ? api.search(searchQuery) : null,
     enabled: false,
+  });
+
+  const chatMutation = useMutation({
+    mutationFn: async (message: string) => {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      });
+      if (!response.ok) throw new Error('Failed to send message');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setChatMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: data.response,
+        timestamp: new Date()
+      }]);
+      setIsChatting(false);
+    },
+    onError: () => {
+      toast({
+        title: "Chat Error",
+        description: "Failed to get response from Claude. Please try again.",
+        variant: "destructive",
+      });
+      setIsChatting(false);
+    }
   });
 
   const uploadMutation = useMutation({
@@ -140,10 +178,23 @@ export default function AllInOnePage() {
             analysis: lastResult.analysis,
             recommendations: lastResult.analysis.recommendations || []
           });
+
+          // Auto-start conversation with Claude about the uploaded document
+          const initialMessage = `I've uploaded a document called "${lastResult.document.originalName}". Can you analyze this document and tell me what stormwater issues or solutions it contains? Please reference information from your knowledge library to provide comprehensive guidance.`;
+          
+          setChatMessages([{
+            id: Date.now().toString(),
+            role: 'user',
+            content: initialMessage,
+            timestamp: new Date()
+          }]);
+          
+          setIsChatting(true);
+          chatMutation.mutate(initialMessage);
           
           toast({
             title: "Analysis complete!",
-            description: `${totalUploaded} documents analyzed using reference library.`,
+            description: `${totalUploaded} documents analyzed using reference library. Claude is ready to discuss!`,
           });
         } else if (lastResult.savedToLibrary) {
           // For library documents, wait for background analysis
@@ -236,7 +287,78 @@ export default function AllInOnePage() {
   }, []);
 
   const downloadRecommendation = (recommendation: any, index: number) => {
-    const content = `# ${recommendation.title}
+    setSelectedRecommendation(recommendation);
+    setDownloadType("single");
+    setDownloadDialogOpen(true);
+  };
+
+  const downloadAllRecommendations = () => {
+    setDownloadType("all");
+    setDownloadDialogOpen(true);
+  };
+
+  const handleDownload = () => {
+    if (!selectedFormat) return;
+
+    if (downloadType === "single" && selectedRecommendation) {
+      downloadSingleFile(selectedRecommendation, selectedFormat);
+    } else if (downloadType === "all") {
+      downloadAllFiles(selectedFormat);
+    }
+
+    setDownloadDialogOpen(false);
+    setSelectedFormat("");
+  };
+
+  const downloadSingleFile = (recommendation: any, format: string) => {
+    const content = generateSingleContent(recommendation, format);
+    const mimeType = getMimeType(format);
+    const extension = getFileExtension(format);
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${recommendation.title.replace(/[^a-zA-Z0-9]/g, '_')}_recommendation.${extension}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Download started",
+      description: `${recommendation.title} downloaded as ${format.toUpperCase()} file.`,
+    });
+  };
+
+  const downloadAllFiles = (format: string) => {
+    if (!analysisResult?.recommendations?.length) return;
+
+    const documentName = analysisResult.document?.originalName || 'Document';
+    const content = generateAllContent(format);
+    const mimeType = getMimeType(format);
+    const extension = getFileExtension(format);
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${documentName.replace(/\.[^/.]+$/, "")}_stormwater_analysis_report.${extension}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Complete report downloaded",
+      description: `Full analysis report with ${analysisResult.recommendations.length} recommendations downloaded as ${format.toUpperCase()}.`,
+    });
+  };
+
+  const generateSingleContent = (recommendation: any, format: string) => {
+    switch (format) {
+      case 'markdown':
+        return `# ${recommendation.title}
 
 ## Category
 ${recommendation.subcategory || recommendation.category || 'Stormwater'}
@@ -256,27 +378,76 @@ ${recommendation.citation}` : ''}
 This recommendation was generated by Stormwater AI based on analysis of uploaded documents and reference library content.
 `;
 
-    const blob = new Blob([content], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${recommendation.title.replace(/[^a-zA-Z0-9]/g, '_')}_recommendation.md`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      case 'text':
+        return `${recommendation.title}
 
-    toast({
-      title: "Download started",
-      description: `${recommendation.title} downloaded as markdown file.`,
-    });
+Category: ${recommendation.subcategory || recommendation.category || 'Stormwater'}
+
+Recommendation Details:
+${recommendation.content}
+
+${recommendation.citation ? `Source Citation: ${recommendation.citation}` : ''}
+
+Generated Information:
+- Generated: ${new Date().toLocaleDateString()}
+- Session: Current analysis session
+- System: Stormwater AI
+
+This recommendation was generated by Stormwater AI based on analysis of uploaded documents and reference library content.
+`;
+
+      case 'html':
+        return `<!DOCTYPE html>
+<html>
+<head>
+    <title>${recommendation.title}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        h1 { color: #2563eb; border-bottom: 2px solid #2563eb; }
+        h2 { color: #1e40af; margin-top: 30px; }
+        .citation { background: #f0f9ff; padding: 15px; border-left: 4px solid #10b981; margin: 20px 0; }
+        .metadata { background: #f9fafb; padding: 15px; border: 1px solid #e5e7eb; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <h1>${recommendation.title}</h1>
+    
+    <h2>Category</h2>
+    <p>${recommendation.subcategory || recommendation.category || 'Stormwater'}</p>
+    
+    <h2>Recommendation Details</h2>
+    <p>${recommendation.content.replace(/\n/g, '<br>')}</p>
+    
+    ${recommendation.citation ? `<div class="citation">
+        <h2>Source Citation</h2>
+        <p>${recommendation.citation}</p>
+    </div>` : ''}
+    
+    <div class="metadata">
+        <h2>Generated Information</h2>
+        <ul>
+            <li>Generated: ${new Date().toLocaleDateString()}</li>
+            <li>Session: Current analysis session</li>
+            <li>System: Stormwater AI</li>
+        </ul>
+        <p><em>This recommendation was generated by Stormwater AI based on analysis of uploaded documents and reference library content.</em></p>
+    </div>
+</body>
+</html>`;
+
+      default:
+        return generateSingleContent(recommendation, 'text');
+    }
   };
 
-  const downloadAllRecommendations = () => {
-    if (!analysisResult?.recommendations?.length) return;
+  const generateAllContent = (format: string) => {
+    if (!analysisResult?.recommendations?.length) return '';
 
     const documentName = analysisResult.document?.originalName || 'Document';
-    const content = `# Stormwater AI Analysis Report
+
+    switch (format) {
+      case 'markdown':
+        return `# Stormwater AI Analysis Report
 
 ## Analyzed Document
 **File:** ${documentName}
@@ -309,20 +480,131 @@ ${rec.citation ? `**Source:** ${rec.citation}` : ''}
 *End of Report*
 `;
 
-    const blob = new Blob([content], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${documentName.replace(/\.[^/.]+$/, "")}_stormwater_analysis_report.md`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      case 'text':
+        return `STORMWATER AI ANALYSIS REPORT
 
-    toast({
-      title: "Complete report downloaded",
-      description: `Full analysis report with ${analysisResult.recommendations.length} recommendations downloaded.`,
-    });
+Analyzed Document: ${documentName}
+Analysis Date: ${new Date().toLocaleDateString()}
+Generated by: Stormwater AI
+
+AI ANALYSIS SUMMARY
+${analysisResult.analysis?.analysis || 'Analysis completed successfully.'}
+
+RECOMMENDATIONS (${analysisResult.recommendations.length})
+
+${analysisResult.recommendations.map((rec: any, index: number) => `
+${index + 1}. ${rec.title}
+
+Category: ${rec.subcategory || rec.category || 'Stormwater'}
+
+Details:
+${rec.content}
+
+${rec.citation ? `Source: ${rec.citation}` : ''}
+
+----------------------------------------
+`).join('')}
+
+ADDITIONAL INFORMATION
+- This report was generated by Stormwater AI
+- Recommendations are based on analysis of uploaded documents and reference library
+- For technical support or questions, contact the system administrator
+
+End of Report
+`;
+
+      case 'html':
+        return `<!DOCTYPE html>
+<html>
+<head>
+    <title>Stormwater AI Analysis Report - ${documentName}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        h1 { color: #2563eb; border-bottom: 3px solid #2563eb; }
+        h2 { color: #1e40af; margin-top: 30px; }
+        h3 { color: #1e3a8a; }
+        .document-info { background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; margin: 20px 0; }
+        .recommendation { background: #f0f9ff; padding: 20px; margin: 20px 0; border-left: 4px solid #3b82f6; }
+        .citation { background: #ecfdf5; padding: 10px; border-left: 4px solid #10b981; margin: 10px 0; }
+        .footer { background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; margin-top: 40px; }
+    </style>
+</head>
+<body>
+    <h1>Stormwater AI Analysis Report</h1>
+    
+    <div class="document-info">
+        <h2>Analyzed Document</h2>
+        <p><strong>File:</strong> ${documentName}</p>
+        <p><strong>Analysis Date:</strong> ${new Date().toLocaleDateString()}</p>
+        <p><strong>Generated by:</strong> Stormwater AI</p>
+    </div>
+    
+    <h2>AI Analysis Summary</h2>
+    <p>${(analysisResult.analysis?.analysis || 'Analysis completed successfully.').replace(/\n/g, '<br>')}</p>
+    
+    <h2>Recommendations (${analysisResult.recommendations.length})</h2>
+    
+    ${analysisResult.recommendations.map((rec: any, index: number) => `
+    <div class="recommendation">
+        <h3>${index + 1}. ${rec.title}</h3>
+        <p><strong>Category:</strong> ${rec.subcategory || rec.category || 'Stormwater'}</p>
+        <p><strong>Details:</strong></p>
+        <p>${rec.content.replace(/\n/g, '<br>')}</p>
+        ${rec.citation ? `<div class="citation">
+            <strong>Source:</strong> ${rec.citation}
+        </div>` : ''}
+    </div>
+    `).join('')}
+    
+    <div class="footer">
+        <h2>Additional Information</h2>
+        <ul>
+            <li>This report was generated by Stormwater AI</li>
+            <li>Recommendations are based on analysis of uploaded documents and reference library</li>
+            <li>For technical support or questions, contact the system administrator</li>
+        </ul>
+        <p><em>End of Report</em></p>
+    </div>
+</body>
+</html>`;
+
+      default:
+        return generateAllContent('text');
+    }
+  };
+
+  const getMimeType = (format: string) => {
+    switch (format) {
+      case 'markdown': return 'text/markdown';
+      case 'html': return 'text/html';
+      case 'text': return 'text/plain';
+      default: return 'text/plain';
+    }
+  };
+
+  const getFileExtension = (format: string) => {
+    switch (format) {
+      case 'markdown': return 'md';
+      case 'html': return 'html';
+      case 'text': return 'txt';
+      default: return 'txt';
+    }
+  };
+
+  const sendMessage = () => {
+    if (!currentMessage.trim() || isChatting) return;
+
+    const userMessage = {
+      id: Date.now().toString(),
+      role: 'user' as const,
+      content: currentMessage,
+      timestamp: new Date()
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+    setCurrentMessage("");
+    setIsChatting(true);
+    chatMutation.mutate(currentMessage);
   };
 
   const filteredDocuments = documents.filter((doc: any) => 
@@ -541,6 +823,70 @@ ${rec.citation ? `**Source:** ${rec.citation}` : ''}
                   )}
                 </CardContent>
               </Card>
+
+              {/* Chat Interface */}
+              {chatMessages.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Brain className="w-5 h-5 text-blue-600" />
+                      Discussion with Claude about Your Documents
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4 max-h-96 overflow-y-auto mb-4">
+                      {chatMessages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`p-3 rounded-lg ${
+                            message.role === 'user'
+                              ? 'bg-blue-50 dark:bg-blue-900/20 ml-8'
+                              : 'bg-gray-50 dark:bg-gray-800 mr-8'
+                          }`}
+                        >
+                          <div className="text-sm font-medium mb-1">
+                            {message.role === 'user' ? 'You' : 'Claude'}
+                          </div>
+                          <div className="text-sm whitespace-pre-wrap">
+                            {message.content}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {message.timestamp.toLocaleTimeString()}
+                          </div>
+                        </div>
+                      ))}
+                      {isChatting && (
+                        <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 mr-8">
+                          <div className="text-sm font-medium mb-1">Claude</div>
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span className="text-sm">Analyzing and responding...</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={currentMessage}
+                        onChange={(e) => setCurrentMessage(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                        placeholder="Ask Claude about your documents or stormwater guidance..."
+                        className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={isChatting}
+                      />
+                      <Button 
+                        onClick={sendMessage} 
+                        disabled={!currentMessage.trim() || isChatting}
+                        className="px-4"
+                      >
+                        Send
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Current Session Recommendations */}
@@ -698,6 +1044,62 @@ ${rec.citation ? `**Source:** ${rec.citation}` : ''}
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Download Format Dialog */}
+      <Dialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Choose Download Format
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Select file format for download:
+              </label>
+              <Select value={selectedFormat} onValueChange={setSelectedFormat}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose format..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Text File (.txt)</SelectItem>
+                  <SelectItem value="markdown">Markdown (.md)</SelectItem>
+                  <SelectItem value="html">HTML (.html)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {downloadType === "single" && selectedRecommendation ? (
+                <p>Downloading: <strong>{selectedRecommendation.title}</strong></p>
+              ) : downloadType === "all" ? (
+                <p>Downloading: <strong>Complete analysis report with all recommendations</strong></p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDownloadDialogOpen(false);
+                setSelectedFormat("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDownload}
+              disabled={!selectedFormat}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

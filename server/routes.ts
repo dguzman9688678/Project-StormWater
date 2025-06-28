@@ -483,6 +483,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Chat with Claude about documents
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { message } = req.body;
+
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      // Get all documents to provide context
+      const documents = await storage.getAllDocuments();
+      
+      // Create context from all documents for Claude
+      const documentContext = documents.map(doc => 
+        `Document: ${doc.originalName}\nCategory: ${doc.category}\nContent: ${doc.content.substring(0, 500)}...\n---\n`
+      ).join('\n');
+
+      // Enhanced message with context
+      const contextualMessage = `You are a stormwater engineering expert with access to a reference library. Here is the available documentation:
+
+${documentContext}
+
+User question: ${message}
+
+Please provide a comprehensive response using information from the reference library above. Include specific recommendations and cite relevant documents when applicable.`;
+
+      const response = await chatService.processMessage(contextualMessage);
+      res.json({ response });
+    } catch (error) {
+      console.error('Chat error:', error);
+      res.status(500).json({ error: "Failed to process chat message" });
+    }
+  });
+
   // Download generated document
   app.post("/api/documents/generate/download", async (req, res) => {
     try {
