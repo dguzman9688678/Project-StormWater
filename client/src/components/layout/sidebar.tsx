@@ -27,7 +27,6 @@ const navigation = [
 export function Sidebar() {
   const [location, navigate] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
-  const isMobile = useIsMobile();
   
   const { data: stats } = useQuery({
     queryKey: ["/api/stats"],
@@ -48,7 +47,7 @@ export function Sidebar() {
               key={item.name}
               onClick={() => {
                 navigate(item.href);
-                if (isMobile) closeSidebar();
+                closeSidebar();
               }}
               className={`sidebar-nav-item w-full text-left ${isActive ? 'active' : ''}`}
             >
@@ -88,46 +87,41 @@ export function Sidebar() {
     </nav>
   );
 
-  // Mobile hamburger menu
-  if (isMobile) {
-    return (
-      <>
-        {/* Mobile menu button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="lg:hidden fixed top-4 left-4 z-50"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
-
-        {/* Mobile sidebar overlay */}
-        {isOpen && (
-          <div className="lg:hidden fixed inset-0 z-40 flex">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50"
-              onClick={closeSidebar}
-            />
-            <aside className="relative flex flex-col w-64 max-w-xs bg-white border-r border-gray-200 overflow-y-auto">
-              <div className="flex items-center justify-between p-4 border-b">
-                <h2 className="text-lg font-semibold">Navigation</h2>
-                <Button variant="ghost" size="sm" onClick={closeSidebar}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <SidebarContent />
-            </aside>
-          </div>
-        )}
-      </>
-    );
-  }
-
-  // Desktop sidebar
   return (
-    <aside className="hidden lg:block w-64 bg-white border-r border-gray-200 overflow-y-auto">
-      <SidebarContent />
-    </aside>
+    <>
+      {/* Mobile menu button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="lg:hidden fixed top-4 left-4 z-50"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </Button>
+
+      {/* Mobile sidebar overlay */}
+      {isOpen && (
+        <div className="lg:hidden fixed inset-0 z-40 flex">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50"
+            onClick={closeSidebar}
+          />
+          <aside className="relative flex flex-col w-64 max-w-xs bg-white border-r border-gray-200 overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold">Navigation</h2>
+              <Button variant="ghost" size="sm" onClick={closeSidebar}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <SidebarContent />
+          </aside>
+        </div>
+      )}
+
+      {/* Desktop sidebar - always visible on desktop */}
+      <aside className="hidden lg:block w-64 bg-white border-r border-gray-200 overflow-y-auto">
+        <SidebarContent />
+      </aside>
+    </>
   );
 }
