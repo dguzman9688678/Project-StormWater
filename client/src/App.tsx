@@ -8,10 +8,9 @@ import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { Layout } from "@/components/layout/layout";
 import { ChatWindow } from "@/components/chat-window";
-import Dashboard from "@/pages/dashboard";
+import SimpleAnalysisPage from "@/pages/simple-analysis";
 import RecommendationsPage from "@/pages/recommendations";
 import DocumentsPage from "@/pages/documents";
-import AIAnalysisPage from "@/pages/ai-analysis";
 import { AdminPage } from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
@@ -19,10 +18,9 @@ function Router() {
   return (
     <Layout>
       <Switch>
-        <Route path="/" component={Dashboard} />
+        <Route path="/" component={SimpleAnalysisPage} />
         <Route path="/recommendations" component={RecommendationsPage} />
         <Route path="/documents" component={DocumentsPage} />
-        <Route path="/ai-analysis" component={AIAnalysisPage} />
         <Route path="/admin" component={AdminPage} />
         <Route component={NotFound} />
       </Switch>
