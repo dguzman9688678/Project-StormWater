@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { AdminPage } from "./admin";
 import { DocumentPreview } from "@/components/document-preview";
+import { AnalysisResults } from "@/components/analysis-results";
+import { AdminControls } from "@/components/admin-controls";
 
 interface AnalysisResult {
   document: any;
@@ -155,6 +157,91 @@ export default function ProfessionalMainPage() {
     },
   });
 
+  // Admin-specific mutations
+  const adminUploadMutation = useMutation({
+    mutationFn: async (data: { files: File[], description?: string }) => {
+      const results = [];
+      
+      for (const file of data.files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (data.description) {
+          formData.append('description', data.description);
+        }
+        formData.append('saveToLibrary', 'true');
+        
+        const response = await fetch('/api/documents/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to upload ${file.name}: ${await response.text()}`);
+        }
+        
+        const result = await response.json();
+        results.push(result);
+      }
+      
+      return results;
+    },
+    onSuccess: (results) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      
+      toast({
+        title: "Documents added to library",
+        description: `${results.length} document(s) successfully added to reference library`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to add documents to library",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/documents/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete document');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "Document deleted",
+        description: "Document removed from reference library",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Delete failed",
+        description: "Could not delete document from library",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Admin handler functions
+  const handleAdminUpload = (files: File[], description?: string) => {
+    adminUploadMutation.mutate({
+      files,
+      description
+    });
+  };
+
+  const handleDeleteDocument = (id: number) => {
+    if (window.confirm('Are you sure you want to delete this document from the reference library? This action cannot be undone.')) {
+      deleteMutation.mutate(id);
+    }
+  };
+
   // File handling
   const handleFileSelect = (selectedFiles: File[]) => {
     setFiles(prev => [...prev, ...selectedFiles]);
@@ -254,7 +341,12 @@ ${analysisResult.recommendations.map((rec, i) => `${i + 1}. ${rec.title}\n   ${r
             <h1 className="text-xl font-semibold">System Administration</h1>
           </div>
         </div>
-        <AdminPage />
+        <div className="p-6">
+          <AdminControls 
+            onUploadToLibrary={handleAdminUpload}
+            onDeleteDocument={handleDeleteDocument}
+          />
+        </div>
       </div>
     );
   }
@@ -480,56 +572,17 @@ ${analysisResult.recommendations.map((rec, i) => `${i + 1}. ${rec.title}\n   ${r
             />
 
             {/* Analysis Results */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Brain className="h-5 w-5" />
-                    <span>Analysis Results</span>
-                  </div>
-                  {analysisResult && (
-                    <Button variant="outline" size="sm" onClick={downloadReport}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Export Report
-                    </Button>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {analysisResult ? (
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Analysis Summary</Label>
-                      <p className="text-sm mt-1 p-3 bg-muted rounded">
-                        {analysisResult.analysis?.analysis || 'Analysis completed successfully'}
-                      </p>
-                    </div>
-                    
-                    {analysisResult.recommendations.length > 0 && (
-                      <div>
-                        <Label>Recommendations ({analysisResult.recommendations.length})</Label>
-                        <ScrollArea className="h-48 mt-2 space-y-2">
-                          {analysisResult.recommendations.map((rec, index) => (
-                            <Card key={index} className="p-3">
-                              <div className="font-medium text-sm">{rec.title}</div>
-                              <div className="text-xs text-muted-foreground mt-1">{rec.content}</div>
-                              {rec.citation && (
-                                <div className="text-xs text-primary mt-1">Source: {rec.citation}</div>
-                              )}
-                            </Card>
-                          ))}
-                        </ScrollArea>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <CheckCircle className="h-16 w-16 mx-auto mb-4" />
-                    <p>Upload a document to see analysis results</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <AnalysisResults 
+              analysisResult={analysisResult}
+              onDownloadReport={downloadReport}
+              onUpdateRecommendation={(id, status) => {
+                // Handle recommendation status updates
+                toast({
+                  title: "Status Updated",
+                  description: `Recommendation marked as ${status}`,
+                });
+              }}
+            />
           </div>
         </div>
       </div>

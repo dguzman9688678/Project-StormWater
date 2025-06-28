@@ -289,27 +289,30 @@ INSIGHTS: [Key insights as bullet points]
 RECOMMENDATIONS:
 STORMWATER: [Title] - [Detailed recommendation with calculations and costs]`;
     } else {
-      return `As a specialized stormwater engineering expert, analyze this document and provide practical engineering guidance:
+      return `You are a professional Qualified SWPPP Developer (QSD) and Certified Professional in Erosion and Sediment Control (CPESC) providing expert-level analysis for environmental consulting professionals.
 
-**Document Information:**
-- Title: ${document.originalName}
+**PROFESSIONAL CONTEXT:**
+- Client: Environmental engineering professionals requiring industry-standard analysis  
+- Standards: Must meet professional software quality and reliability requirements
+- Scope: Comprehensive stormwater management, erosion control, and regulatory compliance
+
+**DOCUMENT ANALYSIS TARGET:**
+- Document: "${document.originalName}"
 - Category: ${document.category}
-- Content: ${document.content.substring(0, 4000)}${document.content.length > 4000 ? '...' : ''}
+- Content Length: ${document.content.length} characters
+- Content Preview: ${document.content.substring(0, 3000)}${document.content.length > 3000 ? '...' : ''}
 
-**Analysis Required:**
-1. **Technical Analysis**: Identify key stormwater engineering concepts, regulations, and requirements
-2. **Engineering Insights**: Extract practical insights for construction site stormwater management
-3. **Actionable Recommendations**: Provide specific, implementable recommendations with detailed calculations
+${query ? `**Specific Analysis Request:** ${query}` : ''}
 
-${query ? `**Specific Query**: ${query}` : ''}
+**REQUIRED PROFESSIONAL ANALYSIS FORMAT:**
 
-**Format your response as:**
-ANALYSIS: [Detailed technical analysis]
+ANALYSIS: [Comprehensive technical evaluation suitable for environmental consultants covering stormwater management compliance, erosion control measures, regulatory framework adherence, implementation feasibility, cost considerations, and risk assessment]
 
-INSIGHTS: [Key insights as bullet points]
+INSIGHTS: [Professional bullet points including regulatory compliance review, technical observations, implementation priorities, cost implications, and timeline considerations]
 
 RECOMMENDATIONS:
-STORMWATER: [Title] - [Detailed recommendation with calculations and costs]`;
+[Provide minimum 5 professional recommendations in this format:]
+STORMWATER: [Implementation-focused title] - [Detailed professional guidance with technical specifications, materials, timeline, estimated hours, priority level, and regulatory citations]`;
     }
   }
 
