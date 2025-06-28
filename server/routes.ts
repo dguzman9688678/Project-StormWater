@@ -248,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Comprehensive analysis across all documents
+  // Comprehensive analysis and solution generation
   app.post("/api/analyze-all", async (req, res) => {
     try {
       const { query } = req.body;
@@ -266,12 +266,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Combine content from all documents for comprehensive analysis
       const combinedContent = documents.map(doc => 
-        `Document: ${doc.originalName}\nContent: ${doc.content}\n---\n`
+        `Document: ${doc.originalName}\nCategory: ${doc.category}\nContent: ${doc.content}\n---\n`
       ).join('\n');
 
       // Create a comprehensive document object for analysis
       const comprehensiveDoc = {
-        id: 0, // Special ID for comprehensive analysis
+        id: 0,
         originalName: "All Documents Combined",
         content: combinedContent,
         category: "comprehensive",
@@ -283,9 +283,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const analysisResult = await aiAnalyzer.analyzeDocument(comprehensiveDoc, query);
       
-      // Store the analysis with special handling for comprehensive analysis
+      // Store the analysis
       const aiAnalysisData = {
-        documentId: documents[0].id, // Use first document ID as reference
+        documentId: documents[0].id,
         query: `Comprehensive Analysis: ${query}`,
         analysis: analysisResult.analysis,
         insights: analysisResult.insights ? [...analysisResult.insights] : [],
@@ -293,19 +293,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const analysis = await storage.createAiAnalysis(aiAnalysisData);
 
-      // Generate recommendations if any were found
+      // Generate recommendations
       if (analysisResult.recommendations.length > 0) {
         await recommendationGenerator.generateFromAnalysis(analysisResult, documents[0].id);
       }
 
-      // Return analysis with source document information
+      // Generate solution documents automatically
+      const solutionDocuments = await documentGenerator.generateSolutionDocuments({
+        problem: query,
+        sourceDocuments: documents,
+        analysisResult: analysisResult
+      });
+
+      // Return comprehensive response
       res.json({
         ...analysis,
         sourceDocuments: documents.map(doc => ({
           id: doc.id,
           name: doc.originalName,
           category: doc.category
-        }))
+        })),
+        generatedDocuments: solutionDocuments,
+        recommendationsGenerated: analysisResult.recommendations.length
       });
     } catch (error) {
       console.error('Comprehensive analysis error:', error);

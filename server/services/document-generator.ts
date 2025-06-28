@@ -30,6 +30,264 @@ export class DocumentGenerator {
     this.aiAnalyzer = new AIAnalyzer();
   }
 
+  async generateSolutionDocuments(params: {
+    problem: string;
+    sourceDocuments: any[];
+    analysisResult: any;
+  }): Promise<GeneratedDocument[]> {
+    const { problem, sourceDocuments, analysisResult } = params;
+    
+    // Determine what types of documents to generate based on the problem
+    const documentTypes = this.determineSolutionDocumentTypes(problem);
+    const generatedDocs: GeneratedDocument[] = [];
+
+    for (const docType of documentTypes) {
+      try {
+        const doc = await this.generateSpecificSolutionDocument(
+          docType,
+          problem,
+          sourceDocuments,
+          analysisResult
+        );
+        generatedDocs.push(doc);
+      } catch (error) {
+        console.error(`Failed to generate ${docType} document:`, error);
+      }
+    }
+
+    return generatedDocs;
+  }
+
+  private determineSolutionDocumentTypes(problem: string): string[] {
+    const lowerProblem = problem.toLowerCase();
+    const types: string[] = [];
+
+    // Infrastructure problems
+    if (lowerProblem.includes('culvert') || lowerProblem.includes('pipe') || lowerProblem.includes('drain')) {
+      types.push('inspection_form', 'maintenance_plan', 'safety_checklist');
+    }
+
+    // Erosion problems
+    if (lowerProblem.includes('erosion') || lowerProblem.includes('sediment') || lowerProblem.includes('slope')) {
+      types.push('erosion_control_plan', 'monitoring_checklist', 'installation_guide');
+    }
+
+    // Water quality issues
+    if (lowerProblem.includes('pollution') || lowerProblem.includes('contamination') || lowerProblem.includes('quality')) {
+      types.push('water_quality_monitoring', 'sampling_protocol', 'treatment_plan');
+    }
+
+    // Construction/development
+    if (lowerProblem.includes('construction') || lowerProblem.includes('development') || lowerProblem.includes('site')) {
+      types.push('swppp_checklist', 'inspection_schedule', 'contractor_requirements');
+    }
+
+    // Always include JSA for safety-related work
+    if (types.length > 0) {
+      types.push('job_safety_analysis');
+    }
+
+    // Default documents if no specific match
+    if (types.length === 0) {
+      types.push('general_inspection_form', 'maintenance_recommendations', 'job_safety_analysis');
+    }
+
+    return types;
+  }
+
+  private async generateSpecificSolutionDocument(
+    docType: string,
+    problem: string,
+    sourceDocuments: any[],
+    analysisResult: any
+  ): Promise<GeneratedDocument> {
+    const templates = this.getDocumentTemplates();
+    const template = templates[docType] || templates['general_inspection_form'];
+    
+    const sourceContent = sourceDocuments.map(doc => 
+      `Source: ${doc.originalName}\nRelevant Content: ${doc.content.substring(0, 1000)}...`
+    ).join('\n\n');
+
+    const prompt = `
+Based on the problem: "${problem}"
+
+Using these source documents:
+${sourceContent}
+
+And this analysis:
+${analysisResult.analysis}
+
+Generate a comprehensive ${template.title} following this structure:
+${template.structure}
+
+Requirements:
+- Include specific citations from source documents
+- Make it practical and actionable
+- Follow industry standards for stormwater management
+- Include safety considerations
+- Provide clear step-by-step procedures where applicable
+
+Format as a professional document with proper sections and numbering.
+`;
+
+    try {
+      const generatedContent = await this.aiAnalyzer.generateDocument(prompt);
+      
+      return {
+        title: `${template.title} - ${problem}`,
+        content: generatedContent,
+        metadata: {
+          generatedAt: new Date(),
+          wordCount: generatedContent.split(' ').length,
+          sections: template.sections,
+          sourceDocuments: sourceDocuments.map(doc => doc.originalName)
+        }
+      };
+    } catch (error) {
+      // Fallback to template-based generation
+      return this.generateFallbackDocument(docType, problem, sourceDocuments, analysisResult);
+    }
+  }
+
+  private getDocumentTemplates(): Record<string, any> {
+    return {
+      inspection_form: {
+        title: "Infrastructure Inspection Form",
+        sections: ["Header", "Pre-Inspection", "Visual Assessment", "Measurements", "Recommendations", "Photos/Sketches"],
+        structure: `
+1. PROJECT INFORMATION
+2. INSPECTION DETAILS
+3. STRUCTURAL ASSESSMENT
+4. FUNCTIONAL ASSESSMENT
+5. DEFICIENCIES IDENTIFIED
+6. IMMEDIATE ACTIONS REQUIRED
+7. RECOMMENDED REPAIRS/MAINTENANCE
+8. FOLLOW-UP SCHEDULE
+9. INSPECTOR CERTIFICATION
+`
+      },
+      job_safety_analysis: {
+        title: "Job Safety Analysis (JSA)",
+        sections: ["Job Steps", "Hazards", "Controls", "PPE Requirements"],
+        structure: `
+1. JOB DESCRIPTION
+2. PERSONNEL REQUIREMENTS
+3. STEP-BY-STEP HAZARD ANALYSIS
+4. PERSONAL PROTECTIVE EQUIPMENT
+5. EMERGENCY PROCEDURES
+6. ENVIRONMENTAL CONSIDERATIONS
+7. PERMITS REQUIRED
+8. SIGNATURES AND APPROVALS
+`
+      },
+      maintenance_plan: {
+        title: "Maintenance Plan",
+        sections: ["Schedule", "Procedures", "Materials", "Safety"],
+        structure: `
+1. MAINTENANCE OVERVIEW
+2. ROUTINE MAINTENANCE SCHEDULE
+3. PREVENTIVE MAINTENANCE PROCEDURES
+4. EMERGENCY MAINTENANCE PROTOCOLS
+5. MATERIALS AND EQUIPMENT
+6. SAFETY REQUIREMENTS
+7. DOCUMENTATION REQUIREMENTS
+8. PERFORMANCE MONITORING
+`
+      },
+      erosion_control_plan: {
+        title: "Erosion Control Plan",
+        sections: ["Site Assessment", "Control Measures", "Installation", "Monitoring"],
+        structure: `
+1. SITE CONDITIONS
+2. EROSION RISK ASSESSMENT
+3. CONTROL MEASURE SELECTION
+4. INSTALLATION SPECIFICATIONS
+5. MAINTENANCE REQUIREMENTS
+6. MONITORING PROTOCOL
+7. ADAPTIVE MANAGEMENT
+8. COMPLIANCE VERIFICATION
+`
+      },
+      swppp_checklist: {
+        title: "SWPPP Inspection Checklist",
+        sections: ["Site Conditions", "BMPs", "Discharge Points", "Documentation"],
+        structure: `
+1. GENERAL SITE CONDITIONS
+2. PERIMETER CONTROLS
+3. SEDIMENT CONTROLS
+4. MATERIAL STORAGE AREAS
+5. VEHICLE TRACKING
+6. WASTE MANAGEMENT
+7. DISCHARGE POINTS
+8. MAINTENANCE NEEDS
+9. NON-COMPLIANCE ISSUES
+`
+      },
+      water_quality_monitoring: {
+        title: "Water Quality Monitoring Plan",
+        sections: ["Parameters", "Locations", "Frequency", "Procedures"],
+        structure: `
+1. MONITORING OBJECTIVES
+2. SAMPLING LOCATIONS
+3. PARAMETERS TO MONITOR
+4. SAMPLING FREQUENCY
+5. SAMPLING PROCEDURES
+6. LABORATORY ANALYSIS
+7. DATA MANAGEMENT
+8. REPORTING REQUIREMENTS
+`
+      }
+    };
+  }
+
+  private generateFallbackDocument(
+    docType: string,
+    problem: string,
+    sourceDocuments: any[],
+    analysisResult: any
+  ): GeneratedDocument {
+    const templates = this.getDocumentTemplates();
+    const template = templates[docType] || templates['inspection_form'];
+    
+    const content = `
+# ${template.title}
+
+## Problem Description
+${problem}
+
+## Source Documents Referenced
+${sourceDocuments.map(doc => `- ${doc.originalName} (${doc.category})`).join('\n')}
+
+## Analysis Summary
+${analysisResult.analysis.substring(0, 500)}...
+
+## Key Insights
+${analysisResult.insights.map((insight: string) => `- ${insight}`).join('\n')}
+
+## Recommendations
+${analysisResult.recommendations.map((rec: any) => `
+### ${rec.title}
+${rec.content}
+*Source: ${rec.citation}*
+`).join('\n')}
+
+---
+*Generated automatically based on comprehensive document analysis*
+*Date: ${new Date().toLocaleDateString()}*
+`;
+
+    return {
+      title: `${template.title} - ${problem}`,
+      content,
+      metadata: {
+        generatedAt: new Date(),
+        wordCount: content.split(' ').length,
+        sections: template.sections,
+        sourceDocuments: sourceDocuments.map(doc => doc.originalName)
+      }
+    };
+  }
+
   async generateDocument(request: DocumentGenerationRequest): Promise<GeneratedDocument> {
     const { title, query, sourceDocumentIds = [], template = 'report' } = request;
 

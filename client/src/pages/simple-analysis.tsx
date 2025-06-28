@@ -126,7 +126,7 @@ export default function SimpleAnalysisPage() {
           Document Analysis
         </h1>
         <p className="text-sm md:text-base text-muted-foreground">
-          Upload documents and ask questions to get comprehensive answers with citations from all your stormwater documents
+          Upload any document (e.g., "collapsing culvert") and get comprehensive solutions with auto-generated inspection forms, JSAs, and maintenance plans - all with proper citations from your document library
         </p>
       </div>
 

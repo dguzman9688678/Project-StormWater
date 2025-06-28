@@ -171,6 +171,55 @@ Please structure your response with clear sections and provide citations referen
     return recommendations.slice(0, 10); // Limit to 10 recommendations
   }
 
+  async generateDocument(prompt: string): Promise<string> {
+    if (!this.hasApiKey) {
+      return this.generateFallbackDocument(prompt);
+    }
+
+    try {
+      const message = await this.anthropic!.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4000,
+        messages: [{
+          role: 'user',
+          content: prompt
+        }],
+        system: "You are a professional stormwater management expert. Generate comprehensive, accurate documents following industry standards. Include proper citations and safety considerations."
+      });
+
+      return message.content[0].type === 'text' ? message.content[0].text : 'Unable to generate document content.';
+    } catch (error) {
+      console.error('AI document generation error:', error);
+      return this.generateFallbackDocument(prompt);
+    }
+  }
+
+  private generateFallbackDocument(prompt: string): string {
+    return `
+# Generated Document
+
+This document was generated based on your request. Due to limited AI processing capabilities, 
+this is a template version. For a comprehensive document, please ensure proper API configuration.
+
+## Key Sections:
+1. Problem Identification
+2. Assessment Procedures  
+3. Safety Requirements
+4. Implementation Steps
+5. Quality Control
+6. Documentation Requirements
+
+## Notes:
+- Review all safety procedures before implementation
+- Verify local regulatory requirements
+- Consult with qualified professionals
+- Document all actions and findings
+
+---
+Generated: ${new Date().toLocaleDateString()}
+`;
+  }
+
   private generateFallbackAnalysis(document: Document, query?: string): AnalysisResult {
     return {
       analysis: `Document analysis for ${document.originalName} (${document.category}). ${query ? `Query: ${query}. ` : ''}The document contains ${document.content.length} characters of content related to stormwater management. Due to AI service limitations, detailed analysis is not available at this time.`,
