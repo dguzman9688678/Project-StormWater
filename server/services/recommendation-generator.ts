@@ -30,7 +30,7 @@ export class RecommendationGenerator {
       {
         title: 'Pre-Construction Site Assessment',
         content: 'Comprehensive site evaluation checklist including soil conditions, slope analysis, and drainage patterns before construction begins.',
-        category: 'qsd',
+        category: 'stormwater',
         subcategory: 'Site Inspection',
         sourceDocumentId: null,
         citation: 'EPA Construction Guidelines, Section 3.2',
@@ -39,7 +39,7 @@ export class RecommendationGenerator {
       {
         title: 'SWPPP Maintenance Records',
         content: 'Required documentation formats and frequency for maintaining SWPPP compliance records and inspection logs.',
-        category: 'qsd',
+        category: 'stormwater',
         subcategory: 'Documentation',
         sourceDocumentId: null,
         citation: 'NPDES Permit Requirements, Appendix B',
@@ -48,7 +48,7 @@ export class RecommendationGenerator {
       {
         title: 'Sediment Basin Design Standards',
         content: 'Volume calculation methods for temporary sediment basins including sizing criteria for various catchment areas.',
-        category: 'swppp',
+        category: 'stormwater',
         subcategory: 'Structural Controls',
         sourceDocumentId: null,
         citation: 'Construction BMP Manual, Chapter 5',
@@ -57,7 +57,7 @@ export class RecommendationGenerator {
       {
         title: 'Construction Entrance Requirements',
         content: 'Specifications for stabilized construction entrances including aggregate size, depth, and maintenance procedures.',
-        category: 'swppp',
+        category: 'stormwater',
         subcategory: 'Access Control',
         sourceDocumentId: null,
         citation: 'State SWPPP Guidelines, Section 4.1',
@@ -66,7 +66,7 @@ export class RecommendationGenerator {
       {
         title: 'Slope Stabilization Techniques',
         content: 'Hydroseeding application rates for varying slope conditions including seed mix specifications and establishment timelines.',
-        category: 'erosion',
+        category: 'stormwater',
         subcategory: 'Slope Protection',
         sourceDocumentId: null,
         citation: 'Erosion Control Handbook, Page 145',
@@ -75,7 +75,7 @@ export class RecommendationGenerator {
       {
         title: 'Silt Fence Installation',
         content: 'Proper installation procedures for silt fence including trenching depth, fabric specifications, and post spacing requirements.',
-        category: 'erosion',
+        category: 'stormwater',
         subcategory: 'Perimeter Controls',
         sourceDocumentId: null,
         citation: 'Standard Construction Details, Sheet E-01',

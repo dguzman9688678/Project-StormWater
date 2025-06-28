@@ -17,7 +17,7 @@ export const recommendations = pgTable("recommendations", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   content: text("content").notNull(),
-  category: text("category").notNull(), // qsd, swppp, erosion
+  category: text("category").notNull(), // stormwater
   subcategory: text("subcategory"),
   sourceDocumentId: integer("source_document_id").references(() => documents.id),
   citation: text("citation"),

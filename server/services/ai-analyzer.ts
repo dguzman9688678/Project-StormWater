@@ -7,7 +7,7 @@ export interface AnalysisResult {
   recommendations: Array<{
     title: string;
     content: string;
-    category: 'qsd' | 'swppp' | 'erosion';
+    category: 'stormwater';
     subcategory?: string;
     citation: string;
   }>;
@@ -148,7 +148,7 @@ Please structure your response with clear sections and provide citations referen
   private extractRecommendations(text: string, document: Document): Array<{
     title: string;
     content: string;
-    category: 'qsd' | 'swppp' | 'erosion';
+    category: 'stormwater';
     subcategory?: string;
     citation: string;
   }> {
@@ -156,7 +156,7 @@ Please structure your response with clear sections and provide citations referen
     const recommendations: Array<{
       title: string;
       content: string;
-      category: 'qsd' | 'swppp' | 'erosion';
+      category: 'stormwater';
       subcategory?: string;
       citation: string;
     }> = [];
@@ -165,21 +165,24 @@ Please structure your response with clear sections and provide citations referen
     const sections = text.split(/(?=QSD|SWPPP|Erosion)/i);
     
     for (const section of sections) {
-      let category: 'qsd' | 'swppp' | 'erosion' = 'qsd';
+      let subcategory = 'General';
       
       if (section.toLowerCase().includes('swppp')) {
-        category = 'swppp';
+        subcategory = 'SWPPP';
       } else if (section.toLowerCase().includes('erosion')) {
-        category = 'erosion';
+        subcategory = 'Erosion Control';
+      } else if (section.toLowerCase().includes('qsd')) {
+        subcategory = 'QSD';
       }
 
       // Extract recommendation titles and content
       const lines = section.split('\n').filter(line => line.trim());
       if (lines.length > 2) {
         recommendations.push({
-          title: lines[0].replace(/^\d+\.?\s*/, '').trim() || `${category.toUpperCase()} Recommendation`,
+          title: lines[0].replace(/^\d+\.?\s*/, '').trim() || `${subcategory} Recommendation`,
           content: lines.slice(1, 3).join(' ').trim(),
-          category,
+          category: 'stormwater',
+          subcategory,
           citation: `${document.originalName}, Section ${recommendations.length + 1}`,
         });
       }
@@ -249,7 +252,7 @@ Generated: ${new Date().toLocaleDateString()}
         {
           title: 'Document Review Required',
           content: 'This document has been processed and is available for search. Manual review is recommended to extract specific engineering recommendations.',
-          category: document.category as any || 'qsd',
+          category: 'stormwater',
           citation: `${document.originalName}, Full Document`
         }
       ]

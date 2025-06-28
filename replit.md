@@ -23,9 +23,9 @@ This is a comprehensive AI-powered stormwater solution system that automatically
 
 ### Database Schema
 - **Documents**: Stores uploaded files with metadata and extracted content
-- **Recommendations**: AI-generated and template recommendations categorized by type
+- **Recommendations**: AI-generated and template recommendations under unified "stormwater" category
 - **AI Analyses**: Stores analysis results with insights and queries
-- **Categories**: QSD, SWPPP, Erosion Control with subcategories
+- **Categories**: Single unified "stormwater" category with QSD, SWPPP, Erosion Control as subcategories
 
 ## Key Components
 
@@ -124,3 +124,5 @@ This is a comprehensive AI-powered stormwater solution system that automatically
   - **AI Service**: Confirmed using Anthropic Claude (not OpenAI) for all AI analysis functionality
   - **Application Name**: Official name is "Stormwater AI" (not variations or longer names)
   - **History Management**: Removed old analysis history display - only current session data shown
+  - **Unified Categories**: All categories consolidated under single "stormwater" category with QSD, SWPPP, Erosion as subcategories
+  - **Combined Upload**: Merged file and image upload into single unified function "Upload Files & Images"

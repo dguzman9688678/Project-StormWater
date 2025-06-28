@@ -29,7 +29,7 @@ interface UploadModalProps {
 
 export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState("stormwater");
   const [description, setDescription] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [documentTitle, setDocumentTitle] = useState("");
@@ -97,7 +97,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
 
   const handleClose = () => {
     setFile(null);
-    setCategory("");
+    setCategory("stormwater");
     setDescription("");
     setDocumentTitle("");
     setCreateFromDescription(false);
@@ -327,11 +327,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
                 <SelectValue placeholder="Select category..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="qsd">QSD Guidelines</SelectItem>
-                <SelectItem value="swppp">SWPPP Documentation</SelectItem>
-                <SelectItem value="erosion">Erosion Control</SelectItem>
-                <SelectItem value="regulatory">Regulatory Requirements</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="stormwater">Stormwater Engineering</SelectItem>
               </SelectContent>
             </Select>
           </div>
