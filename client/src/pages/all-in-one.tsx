@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
+import { AdminPage } from "./admin";
 
 interface AnalysisResult {
   document: any;
@@ -1580,186 +1581,7 @@ End of Report\\par
 
           {/* Administrator Tab */}
           <TabsContent value="admin" className="space-y-6">
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                <strong>Administrator Access:</strong> This section is for managing the reference library that AI uses for analysis. Only authorized administrators can add documents to the permanent library.
-              </p>
-            </div>
-            
-            {/* Library Management Upload Section */}
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="h-5 w-5" />
-                  Add Documents to Reference Library
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="admin-description">Description (optional)</Label>
-                    <Textarea
-                      id="admin-description"
-                      placeholder="Describe the document purpose and contents..."
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div
-                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer
-                      ${dragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600'}
-                      hover:border-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800`}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setDragActive(false);
-                      const droppedFiles = Array.from(e.dataTransfer.files);
-                      handleAdminUpload(droppedFiles);
-                    }}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onClick={() => document.getElementById('admin-file-input')?.click()}
-                  >
-                    <input
-                      id="admin-file-input"
-                      type="file"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => {
-                        const selectedFiles = Array.from(e.target.files || []);
-                        handleAdminUpload(selectedFiles);
-                      }}
-                      accept=".pdf,.docx,.doc,.txt,.xlsx,.xls,.csv,.json,.xml,.rtf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.html,.htm,.md,.log"
-                    />
-                    
-                    {adminUploadMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-8 w-8 text-blue-500 mx-auto mb-2 animate-spin" />
-                        <p className="text-sm text-blue-600 dark:text-blue-400">
-                          Uploading documents to reference library...
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                          Drop files here or click to add to reference library
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          These documents will be permanently saved and used by AI for analysis
-                        </p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Source Library Management */}
-            <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Database className="h-5 w-5" />
-                      Reference Document Library ({filteredDocuments.length} documents)
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => window.location.reload()}
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Refresh
-                    </Button>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[400px]">
-                    <div className="space-y-3">
-                      {filteredDocuments.map((doc: any) => (
-                        <div key={doc.id} className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h3 className="font-medium">{doc.originalName}</h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                                {doc.content.substring(0, 150)}...
-                              </p>
-                              <div className="flex items-center gap-2 mt-2">
-                                <Badge variant="outline">{doc.category}</Badge>
-                                <span className="text-xs text-gray-500">
-                                  {new Date(doc.uploadedAt).toLocaleDateString()}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  {doc.fileSize ? `${(doc.fileSize / 1024 / 1024).toFixed(1)}MB` : ''}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
-                                <Download className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="destructive" 
-                                size="sm"
-                                onClick={() => handleDeleteDocument(doc.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {filteredDocuments.length === 0 && (
-                        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                          <Database className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                          <p>No documents in reference library</p>
-                          <p className="text-sm">Upload documents above to build your AI reference library</p>
-                        </div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-
-              {/* AI Analysis History */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Brain className="h-5 w-5" />
-                    AI Analysis History
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[400px]">
-                    <div className="space-y-3">
-                      {analyses.map((analysis: any) => (
-                        <div key={analysis.id} className="p-4 border rounded-lg">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h3 className="font-medium">Analysis #{analysis.id}</h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                                Query: {analysis.query}
-                              </p>
-                              <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
-                                {analysis.analysis.substring(0, 150)}...
-                              </p>
-                              <div className="flex items-center gap-2 mt-2">
-                                <span className="text-xs text-gray-500">
-                                  {new Date(analysis.createdAt).toLocaleDateString()}
-                                </span>
-                                {analysis.insights && analysis.insights.length > 0 && (
-                                  <Badge variant="outline">{analysis.insights.length} insights</Badge>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
+            <AdminPage />
           </TabsContent>
         </Tabs>
       </div>
@@ -1805,21 +1627,17 @@ End of Report\\par
             </div>
           </div>
 
-          <div className="flex gap-2 justify-end">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDownloadDialogOpen(false);
-                setSelectedFormat("");
-              }}
-            >
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => {
+              setDownloadDialogOpen(false);
+              setSelectedFormat("");
+            }}>
               Cancel
             </Button>
-            <Button
+            <Button 
               onClick={handleDownload}
               disabled={!selectedFormat}
             >
-              <Download className="w-4 h-4 mr-2" />
               Download
             </Button>
           </div>
