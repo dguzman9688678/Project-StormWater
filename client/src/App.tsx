@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { Layout } from "@/components/layout/layout";
 import { ChatWindow } from "@/components/chat-window";
-import SimpleAnalysisPage from "@/pages/simple-analysis";
+import Dashboard from "@/pages/dashboard";
 import RecommendationsPage from "@/pages/recommendations";
 import DocumentsPage from "@/pages/documents";
 import { AdminPage } from "@/pages/admin";
@@ -18,7 +18,7 @@ function Router() {
   return (
     <Layout>
       <Switch>
-        <Route path="/" component={SimpleAnalysisPage} />
+        <Route path="/" component={Dashboard} />
         <Route path="/recommendations" component={RecommendationsPage} />
         <Route path="/documents" component={DocumentsPage} />
         <Route path="/admin" component={AdminPage} />
