@@ -246,6 +246,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteDocument(id: number): Promise<void> {
+    // Delete related AI analyses first (foreign key constraint)
+    await db.delete(aiAnalyses).where(eq(aiAnalyses.documentId, id));
+    
+    // Delete related recommendations (if they reference this document)
+    await db.delete(recommendations).where(eq(recommendations.sourceDocumentId, id));
+    
+    // Finally delete the document
     await db.delete(documents).where(eq(documents.id, id));
   }
 
