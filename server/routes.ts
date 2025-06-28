@@ -486,7 +486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat with Claude about documents
   app.post("/api/chat", async (req, res) => {
     try {
-      const { message } = req.body;
+      const { message, currentDocument } = req.body;
 
       if (!message || typeof message !== 'string') {
         return res.status(400).json({ error: "Message is required" });
@@ -500,14 +500,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `Document: ${doc.originalName}\nCategory: ${doc.category}\nContent: ${doc.content.substring(0, 500)}...\n---\n`
       ).join('\n');
 
+      // Add current document context if provided
+      let currentDocContext = '';
+      if (currentDocument) {
+        currentDocContext = `
+
+CURRENTLY UPLOADED DOCUMENT:
+Document: ${currentDocument.originalName}
+Category: ${currentDocument.category || 'stormwater'}
+Content: ${currentDocument.content ? currentDocument.content.substring(0, 1000) : 'Content processed but not available for display'}
+---
+
+`;
+      }
+
       // Enhanced message with context
       const contextualMessage = `You are a stormwater engineering expert with access to a reference library. Here is the available documentation:
 
+REFERENCE LIBRARY:
 ${documentContext}
+${currentDocContext}
 
 User question: ${message}
 
-Please provide a comprehensive response using information from the reference library above. Include specific recommendations and cite relevant documents when applicable.`;
+Please provide a comprehensive response using information from the reference library above and the currently uploaded document if provided. Include specific recommendations and cite relevant documents when applicable.`;
 
       const response = await chatService.processMessage(contextualMessage);
       res.json({ response });
