@@ -257,12 +257,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create temporary document for analysis (not saved to library)
       const tempDocument = {
         id: Date.now(), // temporary ID
-        title: processed.title,
-        content: processed.content,
-        contentType: processed.contentType,
         category: "stormwater",
-        subcategory: "analysis",
+        filename: primaryFile.filename,
         originalName: primaryFile.originalname,
+        description: description || null,
+        content: processed.content,
         fileSize: primaryFile.size,
         uploadedAt: new Date(),
         isBookmarked: false

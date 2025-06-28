@@ -220,19 +220,22 @@ export class DocumentProcessor {
 
   private async processImageFile(filePath: string, originalName: string): Promise<string> {
     try {
-      // For images, we provide metadata and description
+      // For images, we store the base64 content for AI analysis
+      const imageBuffer = await fs.readFile(filePath);
+      const base64Image = imageBuffer.toString('base64');
       const stats = await fs.stat(filePath);
       const fileExtension = path.extname(originalName).toLowerCase();
       
-      return `Image File: ${originalName}
-File Type: ${fileExtension.slice(1).toUpperCase()} Image
-File Size: ${this.formatFileSize(stats.size)}
-Dimensions: Available for analysis
+      // Store base64 in content for Claude's image analysis
+      return `IMAGE_BASE64:${base64Image}
+METADATA:
+File: ${originalName}
+Type: ${fileExtension.slice(1).toUpperCase()} Image
+Size: ${this.formatFileSize(stats.size)}
 Created: ${stats.birthtime.toLocaleString()}
 Modified: ${stats.mtime.toLocaleString()}
 
-This image file has been uploaded and is available for AI visual analysis.
-The image can be processed for engineering diagrams, site photos, technical drawings, or other visual content relevant to stormwater management.`;
+This is a construction site image available for professional stormwater analysis.`;
     } catch (error) {
       throw new Error(`Failed to process image file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

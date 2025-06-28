@@ -56,49 +56,86 @@ export class AIAnalyzer {
     // Build context from all reference documents
     const referenceContext = this.buildReferenceContext(allDocuments);
     
-    const prompt = `As a specialized stormwater engineering expert, analyze this construction site image by referencing the comprehensive document library below:
+    // Extract base64 image data if available
+    const base64Match = document.content.match(/IMAGE_BASE64:([A-Za-z0-9+/=]+)/);
+    
+    if (base64Match) {
+      const base64Image = base64Match[1];
+      const mediaType = this.getMediaType(document.originalName);
+      
+      const imageAnalysisPrompt = `As a certified QSD/CPESC stormwater professional, analyze this construction site image by referencing the comprehensive document library below:
 
 **REFERENCE DOCUMENT LIBRARY:**
 ${referenceContext}
 
-**CURRENT IMAGE TO ANALYZE:**
-- Filename: ${document.originalName}
-- Category: ${document.category}
-- Site Description: ${document.content}
+**IMAGE ANALYSIS REQUEST:**
+Analyze the uploaded construction site image "${document.originalName}" for stormwater management issues and provide professional recommendations.
+
+${query ? `**User Question**: ${query}` : ''}
 
 **COMPREHENSIVE ANALYSIS INSTRUCTIONS:**
-Cross-reference this image against ALL documents in the library to identify every possible stormwater issue. Use the reference documents to:
-
-1. **Identify ALL Issues**: Compare site conditions against standards, regulations, and best practices from the document library
-2. **Reference Violations**: Cite specific violations of codes, standards, or procedures from uploaded documents
-3. **Comprehensive Solutions**: Provide solutions that reference specific sections, formulas, and requirements from the library
-4. **Regulatory Compliance**: Ensure all recommendations comply with regulations found in the reference documents
-5. **Cost Analysis**: Use pricing and material data from the library where available
-
-${query ? `**Specific Query**: ${query}` : ''}
+1. **Visual Assessment**: Identify all visible stormwater issues in the image
+2. **Regulatory Compliance**: Reference specific codes and standards from the document library
+3. **BMP Requirements**: Recommend appropriate Best Management Practices
+4. **Permit Compliance**: Address NPDES and other permit requirements
+5. **Implementation Guide**: Provide specific installation and maintenance procedures
 
 **Format your response as:**
-ANALYSIS: [Comprehensive analysis referencing specific documents and sections]
+ANALYSIS: [Detailed visual analysis of site conditions and stormwater issues]
 
-INSIGHTS: [Key insights with document citations]
+INSIGHTS: [Key technical insights with document citations]
 
 RECOMMENDATIONS:
-STORMWATER: [Title] - [Detailed recommendation with specific document references, calculations, and regulatory citations]`;
+STORMWATER: [Title] - [Detailed professional recommendation with specific document references]`;
 
-    const response = await this.anthropic!.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
-      system: `You are Claude, a specialized stormwater engineering AI with access to a comprehensive reference library. Always cite specific documents, sections, and standards from the provided library when making recommendations.`,
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-    });
+      const response = await this.anthropic!.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        system: `You are a certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control) providing professional stormwater engineering analysis. Always reference specific documents and standards from the provided library.`,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: imageAnalysisPrompt
+              },
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: mediaType,
+                  data: base64Image
+                }
+              }
+            ]
+          }
+        ],
+      });
 
-    const analysisText = response.content[0].type === 'text' ? response.content[0].text : '';
-    return this.parseAnalysisResponse(analysisText, document);
+      const analysisText = response.content[0].type === 'text' ? response.content[0].text : '';
+      return this.parseAnalysisResponse(analysisText, document);
+    } else {
+      // Fallback to text-based analysis if no image data
+      return this.analyzeTextDocument(document, query);
+    }
+  }
+
+  private getMediaType(filename: string): string {
+    const ext = filename.toLowerCase().split('.').pop();
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return 'image/jpeg';
+    }
   }
 
   private async analyzeImageDocument(document: Document, query?: string): Promise<AnalysisResult> {
