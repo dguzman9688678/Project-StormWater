@@ -302,6 +302,61 @@ export default function AllInOnePage() {
     }
   };
 
+  const adminUploadMutation = useMutation({
+    mutationFn: async (data: { files: File[], description?: string }) => {
+      const results = [];
+      
+      for (const file of data.files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (data.description) {
+          formData.append('description', data.description);
+        }
+        formData.append('saveToLibrary', 'true'); // Force save to library for admin
+        
+        const response = await fetch('/api/documents/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to upload ${file.name}: ${await response.text()}`);
+        }
+        
+        const result = await response.json();
+        results.push(result);
+      }
+      
+      return results;
+    },
+    onSuccess: (results) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      setDescription(''); // Clear description
+      
+      toast({
+        title: "Documents added to library",
+        description: `${results.length} document(s) successfully added to reference library`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to add documents to library",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAdminUpload = (files: File[]) => {
+    if (files.length > 0) {
+      adminUploadMutation.mutate({
+        files,
+        description: description || undefined
+      });
+    }
+  };
+
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
@@ -1559,7 +1614,12 @@ End of Report\\par
                     className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer
                       ${dragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600'}
                       hover:border-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800`}
-                    onDrop={handleDrop}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragActive(false);
+                      const droppedFiles = Array.from(e.dataTransfer.files);
+                      handleAdminUpload(droppedFiles);
+                    }}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onClick={() => document.getElementById('admin-file-input')?.click()}
@@ -1571,42 +1631,29 @@ End of Report\\par
                       className="hidden"
                       onChange={(e) => {
                         const selectedFiles = Array.from(e.target.files || []);
-                        if (selectedFiles.length > 0) {
-                          // Upload to library for admin
-                          const formData = new FormData();
-                          selectedFiles.forEach(file => formData.append('file', file));
-                          if (description) formData.append('description', description);
-                          formData.append('saveToLibrary', 'true');
-                          
-                          fetch('/api/documents/upload', {
-                            method: 'POST',
-                            body: formData,
-                          }).then(res => res.json()).then(() => {
-                            toast({
-                              title: "Files added to library",
-                              description: `${selectedFiles.length} file(s) added to reference library`,
-                            });
-                            queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
-                            setDescription('');
-                          }).catch(() => {
-                            toast({
-                              title: "Upload failed",
-                              description: "Failed to add files to library",
-                              variant: "destructive",
-                            });
-                          });
-                        }
+                        handleAdminUpload(selectedFiles);
                       }}
                       accept=".pdf,.docx,.doc,.txt,.xlsx,.xls,.csv,.json,.xml,.rtf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.html,.htm,.md,.log"
                     />
                     
-                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      Drop files here or click to add to reference library
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      These documents will be permanently saved and used by AI for analysis
-                    </p>
+                    {adminUploadMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-8 w-8 text-blue-500 mx-auto mb-2 animate-spin" />
+                        <p className="text-sm text-blue-600 dark:text-blue-400">
+                          Uploading documents to reference library...
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Drop files here or click to add to reference library
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          These documents will be permanently saved and used by AI for analysis
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>
