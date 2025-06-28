@@ -1381,19 +1381,120 @@ End of Report\\par
           </Card>
         </div>
 
-        {/* Global Search */}
+        {/* Enhanced Search and Filtering */}
         <Card>
           <CardContent className="p-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Search documents, recommendations, and analyses..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
-              />
-              <Button onClick={() => performSearch()} variant="outline">
-                <Search className="h-4 w-4" />
-              </Button>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Search documents, recommendations, and analyses..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1"
+                />
+                <Button onClick={() => performSearch()} variant="outline">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Advanced Filters */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                <Select 
+                  value={advancedFilters.category} 
+                  onValueChange={(value) => setAdvancedFilters(prev => ({...prev, category: value}))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="qsd">QSD</SelectItem>
+                    <SelectItem value="swppp">SWPPP</SelectItem>
+                    <SelectItem value="erosion">Erosion Control</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select 
+                  value={advancedFilters.fileType} 
+                  onValueChange={(value) => setAdvancedFilters(prev => ({...prev, fileType: value}))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="File Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value=".pdf">PDF</SelectItem>
+                    <SelectItem value=".docx">Word</SelectItem>
+                    <SelectItem value=".txt">Text</SelectItem>
+                    <SelectItem value=".xlsx">Excel</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select 
+                  value={advancedFilters.dateRange} 
+                  onValueChange={(value) => setAdvancedFilters(prev => ({...prev, dateRange: value}))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Date Range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Dates</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button 
+                  onClick={() => setAdvancedFilters({category: '', dateRange: '', fileType: '', sizeRange: ''})}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Clear Filters
+                </Button>
+              </div>
+
+              {/* Bulk Operations Bar */}
+              {bulkOperationMode && (
+                <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Bulk Operations Mode Active
+                      </span>
+                      <Badge variant="secondary">
+                        {selectedDocuments.length} selected
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleBulkAnalysis}
+                        disabled={selectedDocuments.length === 0 || exportInProgress}
+                        className="flex items-center gap-2"
+                      >
+                        {exportInProgress ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Brain className="h-4 w-4" />
+                        )}
+                        Analyze Selected
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleAdvancedExport('pdf')}
+                        disabled={exportInProgress}
+                        className="flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        Export Selected
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
