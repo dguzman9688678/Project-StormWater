@@ -15,11 +15,6 @@ import { RecommendationCard } from "@/components/recommendation-card";
 import { api } from "@/lib/api";
 
 export default function Dashboard() {
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ["/api/stats"],
-    queryFn: api.getStats,
-  });
-
   const { data: recentRecommendations, isLoading: recsLoading } = useQuery({
     queryKey: ["/api/recommendations", "recent"],
     queryFn: () => api.getRecommendations(undefined, 3),
@@ -29,28 +24,6 @@ export default function Dashboard() {
     queryKey: ["/api/analyses"],
     queryFn: () => api.getAnalyses(),
   });
-
-  const StatCard = ({ title, value, icon: Icon, color }: any) => (
-    <Card>
-      <CardContent className="p-5">
-        <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <Icon className={`h-6 w-6 ${color}`} />
-          </div>
-          <div className="ml-5 w-0 flex-1">
-            <dl>
-              <dt className="text-sm font-medium text-muted-foreground truncate">
-                {title}
-              </dt>
-              <dd className="text-lg font-medium text-foreground">
-                {statsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : value}
-              </dd>
-            </dl>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   return (
     <div className="space-y-6">
@@ -64,33 +37,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <StatCard
-          title="QSD Guidelines"
-          value={stats?.qsdCount || 0}
-          icon={Award}
-          color="text-primary"
-        />
-        <StatCard
-          title="SWPPP Practices"
-          value={stats?.swpppCount || 0}
-          icon={Shield}
-          color="text-accent"
-        />
-        <StatCard
-          title="Erosion Controls"
-          value={stats?.erosionCount || 0}
-          icon={Mountain}
-          color="text-warning"
-        />
-        <StatCard
-          title="AI Insights"
-          value={stats?.analysisCount || 0}
-          icon={Brain}
-          color="text-purple-600"
-        />
-      </div>
+
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
