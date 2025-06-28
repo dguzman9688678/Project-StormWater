@@ -30,6 +30,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { SystemStatus } from "@/components/system-status";
+import { PerformanceMonitor } from "@/components/performance-monitor";
 
 interface AdminControlsProps {
   onUploadToLibrary?: (files: File[], description?: string) => void;
@@ -513,7 +514,10 @@ export function AdminControls({ onUploadToLibrary, onDeleteDocument, className }
 
         {/* System Testing */}
         <TabsContent value="testing" className="space-y-6">
-          <SystemStatus />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SystemStatus />
+            <PerformanceMonitor />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

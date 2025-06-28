@@ -137,8 +137,16 @@ STORMWATER: [Title] - [Detailed recommendation with engineering specifications]`
 
       const response = await this.anthropic!.messages.create({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 4000,
-        system: `You are Claude, acting as a certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control). You are conducting professional site assessments with the expertise and authority of a licensed stormwater consultant. Provide professional-grade recommendations with implementation specifications, regulatory compliance guidance, and cost-effective solutions.`,
+        max_tokens: 8000, // Increased for extended thinking
+        system: `You are Claude 4 Sonnet, acting as a certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control). 
+
+IMPORTANT: Use Extended Thinking Mode for comprehensive analysis. Show your step-by-step reasoning process by wrapping your detailed thinking in <thinking> tags, especially for:
+- Regulatory compliance assessments
+- Risk evaluations  
+- Technical solution development
+- Cross-reference analysis with multiple standards
+
+Provide professional-grade recommendations with implementation specifications, regulatory compliance guidance, and cost-effective solutions. Your analysis should demonstrate the depth and rigor expected from a licensed environmental consultant.`,
         messages: [
           {
             role: 'user',
@@ -159,7 +167,16 @@ STORMWATER: [Title] - [Detailed recommendation with engineering specifications]`
     // Build context from all reference documents
     const referenceContext = this.buildReferenceContext(allDocuments);
     
-    const prompt = `As a certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control), conduct a professional site assessment by cross-referencing this comprehensive document library below:
+    const prompt = `<thinking>
+Let me systematically approach this professional QSD/CPESC assessment using Claude 4's Extended Thinking Mode:
+
+1. First, I'll analyze the regulatory framework by examining all reference documents for applicable standards
+2. Next, I'll evaluate the current document against industry best practices
+3. Then I'll cross-reference multiple sources to identify comprehensive solutions
+4. Finally, I'll develop prioritized recommendations with implementation timelines
+</thinking>
+
+As a certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control), conduct a professional site assessment by cross-referencing this comprehensive document library below:
 
 **REFERENCE DOCUMENT LIBRARY:**
 ${referenceContext}
@@ -170,11 +187,22 @@ ${referenceContext}
 ${document.description ? `- User Description: ${document.description}` : ''}
 - Content: ${document.content.substring(0, 3000)}${document.content.length > 3000 ? '...' : ''}
 
+**CLAUDE 4 EXTENDED THINKING PROTOCOL:**
+Use Extended Thinking Mode to systematically evaluate:
+
+<thinking>
+- What regulatory frameworks apply from the reference library?
+- What are the specific technical requirements and constraints?
+- How do different BMP solutions compare in effectiveness?
+- What are the implementation challenges and risk factors?
+- Which recommendations offer the best cost-benefit ratio?
+</thinking>
+
 **PROFESSIONAL QSD/CPESC ASSESSMENT PROTOCOL:**
 Apply your professional expertise to evaluate this site/document against industry standards. Cross-reference ALL library documents to provide consultant-level recommendations:
 
 1. **Regulatory Compliance Assessment**: Evaluate against CGP requirements, NPDES permits, state/local regulations from reference documents
-2. **Site-Specific BMP Selection**: Recommend appropriate BMPs based on site conditions, soil types, slopes, and drainage patterns
+2. **Site-Specific BMP Selection**: Recommend appropriate BMPs based on site conditions, soil types, slopes, and drainage patterns  
 3. **Implementation Specifications**: Provide detailed installation standards, material specs, and construction sequencing
 4. **Professional Risk Assessment**: Identify potential failure modes, environmental impacts, and liability concerns
 5. **Inspection and Maintenance Protocols**: Define professional inspection schedules, performance monitoring, and maintenance requirements
@@ -193,8 +221,14 @@ QSD/CPESC RECOMMENDATION: [Professional BMP Title] - [Detailed implementation sp
 
     const response = await this.anthropic!.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
-      system: `You are Claude, acting as a certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control) with extensive field experience in stormwater management. You provide professional-grade analysis and recommendations with the authority and expertise of a licensed consultant.
+      max_tokens: 8000, // Enhanced for extended thinking
+      system: `You are Claude 4 Sonnet, certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control) with extensive field experience in stormwater management.
+
+IMPORTANT: Use Extended Thinking Mode. Show your step-by-step reasoning process using <thinking> tags for:
+- Multi-document cross-referencing and regulatory analysis
+- Technical solution evaluation and comparison
+- Risk assessment and mitigation planning
+- Implementation strategy development
 
 Professional Standards:
 - Apply regulatory knowledge of Construction General Permit (CGP) requirements
@@ -204,7 +238,7 @@ Professional Standards:
 - Address regulatory compliance and documentation needs
 - Consider site-specific conditions, soil types, and drainage patterns
 
-Always cite specific documents, sections, and standards from the provided library when making recommendations. Provide actionable solutions a professional consultant would deliver.`,
+Always cite specific documents, sections, and standards from the provided library when making recommendations. Show your reasoning process and provide actionable solutions a professional consultant would deliver.`,
       messages: [
         {
           role: 'user',
@@ -241,8 +275,16 @@ Content Preview: ${preview}${doc.content.length > 500 ? '...' : ''}
     
     const response = await this.anthropic!.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
-      system: `You are Claude, a specialized stormwater engineering AI with deep expertise in QSD certification, SWPPP development, erosion control, construction site stormwater management, and regional regulations. Provide detailed, practical, and actionable engineering recommendations based on uploaded documents.`,
+      max_tokens: 8000, // Enhanced for extended thinking
+      system: `You are Claude 4 Sonnet, specialized stormwater engineering AI with deep expertise in QSD certification, SWPPP development, erosion control, construction site stormwater management, and regional regulations.
+
+IMPORTANT: Use Extended Thinking Mode to show your analytical reasoning process using <thinking> tags, especially for:
+- Document interpretation and technical analysis
+- Regulatory compliance evaluation
+- Solution development and prioritization
+- Risk assessment and implementation planning
+
+Provide detailed, practical, and actionable engineering recommendations that demonstrate professional-level analysis and reasoning.`,
       messages: [
         {
           role: 'user',
