@@ -30,10 +30,10 @@ export default function QSDPage() {
       <div className="space-y-2">
         <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground flex items-center">
           <BookOpen className="h-5 w-5 md:h-6 md:w-6 mr-2" />
-          QSD Recommendations
+          Developer Recommendations
         </h1>
         <p className="text-sm md:text-base text-muted-foreground">
-          Qualified SWPPP Developer guidelines and best practices
+          SWPPP development guidelines and best practices
         </p>
       </div>
 

@@ -30,7 +30,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
-          Engineering Recommendations Dashboard
+          Stormwater Management Dashboard
         </h1>
         <p className="text-sm md:text-base text-muted-foreground">
           Comprehensive stormwater management guidance and best practices

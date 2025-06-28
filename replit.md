@@ -1,8 +1,8 @@
-# Stormwater-AI Engineering Recommendations System
+# Stormwater-AI Recommendations System
 
 ## Overview
 
-This is a comprehensive engineering support tool that provides QSD, SWPPP, and erosion control recommendations from uploaded reference documents. The system combines AI-powered document analysis with engineering best practices for stormwater management, allowing users to upload and analyze engineering documents, receive AI-generated recommendations, and access organized guidelines for professional stormwater engineering support.
+This is a comprehensive stormwater support tool that provides developer, SWPPP, and erosion control recommendations from uploaded reference documents. The system combines AI-powered document analysis with stormwater best practices for management, allowing users to upload and analyze stormwater documents, receive AI-generated recommendations, and access organized guidelines for professional stormwater support.
 
 ## System Architecture
 
@@ -103,8 +103,8 @@ This is a comprehensive engineering support tool that provides QSD, SWPPP, and e
 
 - **Communication Style**: Simple, everyday language
 - **Project Ownership**: All intellectual property belongs to Daniel Guzman (guzman.danield@outlook.com)
-- **Application Purpose**: Personal engineering support tool providing practical QSD, SWPPP, and erosion control recommendations
-- **Focus**: Actual support for engineering work, not projects or user management
+- **Application Purpose**: Personal stormwater support tool providing practical developer, SWPPP, and erosion control recommendations
+- **Focus**: Actual support for stormwater work, not projects or user management
 - **Integration Goal**: Dashboard that provides comprehensive recommendations from uploaded reference documents
 
 ## Recent Development Progress
@@ -112,7 +112,7 @@ This is a comprehensive engineering support tool that provides QSD, SWPPP, and e
 - **June 28, 2025**: Created comprehensive React/Express dashboard with:
   - Document upload and processing functionality
   - AI-powered analysis integration
-  - Categorized recommendations (QSD, SWPPP, Erosion Control)
+  - Categorized recommendations (Developer, SWPPP, Erosion Control)
   - Global search across documents and recommendations
   - Template recommendations pre-loaded for demonstration
   - Professional UI with sidebar navigation and responsive design

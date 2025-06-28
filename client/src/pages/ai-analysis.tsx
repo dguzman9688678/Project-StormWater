@@ -80,7 +80,7 @@ export default function AIAnalysisPage() {
           AI Analysis
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Ask questions about your documents and get AI-powered engineering insights
+          Ask questions about your documents and get AI-powered stormwater insights
         </p>
       </div>
 

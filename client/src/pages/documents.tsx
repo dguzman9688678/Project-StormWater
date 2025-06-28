@@ -95,7 +95,7 @@ export default function DocumentsPage() {
           Reference Documents
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Manage and review your uploaded engineering documents
+          Manage and review your uploaded stormwater documents
         </p>
       </div>
 
@@ -111,7 +111,7 @@ export default function DocumentsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All categories</SelectItem>
-            <SelectItem value="qsd">QSD Guidelines</SelectItem>
+            <SelectItem value="qsd">Developer Guidelines</SelectItem>
             <SelectItem value="swppp">SWPPP Documentation</SelectItem>
             <SelectItem value="erosion">Erosion Control</SelectItem>
             <SelectItem value="regulatory">Regulatory Requirements</SelectItem>
