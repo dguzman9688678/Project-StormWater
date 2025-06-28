@@ -17,7 +17,7 @@ This is a comprehensive AI-powered stormwater solution system that automatically
 ### Backend Architecture
 - **Framework**: Express.js with TypeScript
 - **Database**: PostgreSQL with Drizzle ORM for type-safe database operations
-- **File Processing**: Multi-format document processing (PDF, DOCX, TXT)
+- **File Processing**: Multi-format document processing (PDF, DOCX, DOC, TXT, XLSX, XLS, CSV, JSON, XML, RTF)
 - **AI Integration**: Anthropic Claude integration for document analysis
 - **API Design**: RESTful API with proper error handling and validation
 
@@ -30,7 +30,7 @@ This is a comprehensive AI-powered stormwater solution system that automatically
 ## Key Components
 
 ### Document Processing Engine
-- Multi-format file support (PDF, DOCX, TXT)
+- Multi-format file support (PDF, DOCX, DOC, TXT, XLSX, XLS, CSV, JSON, XML, RTF)
 - Text extraction and content analysis
 - File validation and size limits (10MB)
 - Temporary file cleanup for security
