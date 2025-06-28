@@ -189,8 +189,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const analysisResult = await aiAnalyzer.analyzeDocument(tempDocument);
           console.log(`Temporary analysis complete for ${tempDocument.originalName}`);
           
+          // For images, include base64 data for chat analysis
+          let imageData = null;
+          const fileExtension = tempDocument.originalName.toLowerCase();
+          const isImage = fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif') || fileExtension.includes('.bmp') || fileExtension.includes('.webp');
+          
+          if (isImage && tempDocument.filePath) {
+            try {
+              const fs = await import('fs');
+              const imageBuffer = await fs.promises.readFile(tempDocument.filePath);
+              imageData = imageBuffer.toString('base64');
+            } catch (error) {
+              console.error('Failed to read image for chat:', error);
+            }
+          }
+
           res.json({ 
-            document: tempDocument, 
+            document: { ...tempDocument, imageData }, 
             analysis: analysisResult,
             savedToLibrary: false,
             message: "Document analyzed successfully. Results are temporary and not saved to library."
@@ -507,25 +522,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const fileExtension = currentDocument.originalName.toLowerCase();
         const isImage = fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif') || fileExtension.includes('.bmp') || fileExtension.includes('.webp');
         
-        if (isImage && currentDocument.filePath) {
+        if (isImage && (currentDocument.filePath || currentDocument.imageData)) {
           // For images, we need to handle visual analysis by sending the actual image
           try {
-            const fs = await import('fs');
-            const imageBuffer = await fs.promises.readFile(currentDocument.filePath);
-            const base64Image = imageBuffer.toString('base64');
+            let base64Image = currentDocument.imageData;
             
-            // Use Claude's image analysis with the document context
-            const imageAnalysisMessage = `You are a stormwater engineering expert. Analyze this uploaded image to identify any stormwater management issues, problems, BMPs, or conditions visible. Then provide specific solutions and recommendations using the reference library documents below.
+            // If no imageData but we have filePath, try to read the file
+            if (!base64Image && currentDocument.filePath) {
+              const fs = await import('fs');
+              const imageBuffer = await fs.promises.readFile(currentDocument.filePath);
+              base64Image = imageBuffer.toString('base64');
+            }
+            
+            if (base64Image) {
+              // Use Claude's image analysis with the document context
+              const imageAnalysisMessage = `As a certified QSD/CPESC stormwater professional, analyze this uploaded image "${currentDocument.originalName}" to identify any stormwater management issues, problems, BMPs, or conditions visible. Then provide specific professional solutions and recommendations using the reference library documents below.
 
 REFERENCE LIBRARY:
 ${documentContext}
 
 User question: ${message}
 
-Please provide detailed analysis of what you see in the image and specific recommendations based on your reference materials.`;
+Please provide detailed professional site assessment of what you see in the image and specific consultant-level recommendations based on your reference materials.`;
 
-            const response = await chatService.analyzeImage(base64Image, imageAnalysisMessage);
-            return res.json({ response });
+              const response = await chatService.analyzeImage(base64Image, imageAnalysisMessage);
+              return res.json({ response });
+            }
           } catch (error) {
             console.error('Image analysis error:', error);
             // Fall back to text-based analysis
