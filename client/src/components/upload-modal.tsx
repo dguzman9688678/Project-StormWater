@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
+import { apiRequest } from "@/lib/queryClient";
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -31,6 +32,8 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [dragActive, setDragActive] = useState(false);
+  const [documentTitle, setDocumentTitle] = useState("");
+  const [createFromDescription, setCreateFromDescription] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -59,10 +62,45 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
     },
   });
 
+  const createFromTextMutation = useMutation({
+    mutationFn: async (data: { title: string; description: string; category: string }) => {
+      const response = await fetch('/api/documents/text', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Document created successfully",
+        description: "Your text document is being analyzed for recommendations.",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/recommendations"] });
+      
+      handleClose();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Creation failed",
+        description: error.message || "Failed to create document",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleClose = () => {
     setFile(null);
     setCategory("");
     setDescription("");
+    setDocumentTitle("");
+    setCreateFromDescription(false);
     setDragActive(false);
     onClose();
   };
@@ -116,43 +154,124 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!file) {
+    if (!category) {
       toast({
-        title: "No file selected",
-        description: "Please select a file to upload.",
+        title: "Category required",
+        description: "Please select a category.",
         variant: "destructive",
       });
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('category', category);
-    formData.append('description', description);
+    if (createFromDescription) {
+      // Text-only document creation
+      if (!documentTitle.trim() || !description.trim()) {
+        toast({
+          title: "Title and description required",
+          description: "Please provide both a title and description for your document.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    uploadMutation.mutate(formData);
+      createFromTextMutation.mutate({
+        title: documentTitle.trim(),
+        description: description.trim(),
+        category
+      });
+    } else {
+      // File upload
+      if (!file) {
+        toast({
+          title: "No file selected",
+          description: "Please select a file to upload or switch to text mode.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', category);
+      formData.append('description', description);
+
+      uploadMutation.mutate(formData);
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Upload Reference Document</DialogTitle>
+          <DialogTitle>
+            {createFromDescription ? "Create Document from Description" : "Upload Reference Document"}
+          </DialogTitle>
         </DialogHeader>
+
+        {/* Mode Toggle */}
+        <div className="flex space-x-2 p-1 bg-muted rounded-lg">
+          <Button
+            type="button"
+            variant={!createFromDescription ? "default" : "ghost"}
+            size="sm"
+            className="flex-1"
+            onClick={() => setCreateFromDescription(false)}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Upload File
+          </Button>
+          <Button
+            type="button"
+            variant={createFromDescription ? "default" : "ghost"}
+            size="sm"
+            className="flex-1"
+            onClick={() => setCreateFromDescription(true)}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Text Only
+          </Button>
+        </div>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* File Drop Zone */}
-          <div
-            className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-              dragActive
-                ? "border-primary bg-primary/5"
-                : "border-muted-foreground/25 hover:border-primary/50"
-            }`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-          >
+          {createFromDescription ? (
+            // Text-Only Mode
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="document-title">Document Title</Label>
+                <Input
+                  id="document-title"
+                  value={documentTitle}
+                  onChange={(e) => setDocumentTitle(e.target.value)}
+                  placeholder="Enter a descriptive title for your document"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="document-description">Document Description</Label>
+                <Textarea
+                  id="document-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe your engineering scenario, project requirements, site conditions, or any specific stormwater challenges you need recommendations for..."
+                  rows={6}
+                  required
+                />
+              </div>
+            </div>
+          ) : (
+            // File Upload Mode
+            <div
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                dragActive
+                  ? "border-primary bg-primary/5"
+                  : "border-muted-foreground/25 hover:border-primary/50"
+              }`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
             {file ? (
               <div className="space-y-2">
                 <FileText className="h-8 w-8 mx-auto text-primary" />
@@ -193,7 +312,8 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
                 </p>
               </div>
             )}
-          </div>
+            </div>
+          )}
 
           {/* Category */}
           <div className="space-y-2">
@@ -212,17 +332,19 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
             </Select>
           </div>
 
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of the document content..."
-              rows={3}
-            />
-          </div>
+          {/* Description (only show in file upload mode) */}
+          {!createFromDescription && (
+            <div className="space-y-2">
+              <Label htmlFor="description">Description (Optional)</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Brief description of the document content..."
+                rows={3}
+              />
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex justify-end space-x-3">
@@ -231,18 +353,37 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
             </Button>
             <Button 
               type="submit" 
-              disabled={uploadMutation.isPending || !file}
+              disabled={
+                (createFromDescription ? createFromTextMutation.isPending : uploadMutation.isPending) ||
+                (!createFromDescription && !file) ||
+                (createFromDescription && (!documentTitle.trim() || !description.trim())) ||
+                !category
+              }
             >
-              {uploadMutation.isPending ? (
-                <>
-                  <Upload className="h-4 w-4 mr-2 animate-spin" />
-                  Uploading...
-                </>
+              {createFromDescription ? (
+                createFromTextMutation.isPending ? (
+                  <>
+                    <FileText className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Create & Analyze
+                  </>
+                )
               ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload & Process
-                </>
+                uploadMutation.isPending ? (
+                  <>
+                    <Upload className="h-4 w-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload & Process
+                  </>
+                )
               )}
             </Button>
           </div>

@@ -46,6 +46,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create document from text description
+  app.post("/api/documents/text", async (req, res) => {
+    try {
+      const { title, description, category } = req.body;
+
+      if (!title || !description || !category) {
+        return res.status(400).json({ error: "Title, description, and category are required" });
+      }
+
+      // Create document from text
+      const documentData = insertDocumentSchema.parse({
+        filename: `${title.replace(/[^a-zA-Z0-9]/g, '_')}.txt`,
+        originalName: `${title}.txt`,
+        category,
+        description,
+        content: description,
+        fileSize: description.length,
+      });
+
+      const document = await storage.createDocument(documentData);
+
+      // Start AI analysis in background
+      setImmediate(async () => {
+        try {
+          const analysisResult = await aiAnalyzer.analyzeDocument(document);
+          
+          // Save AI analysis
+          const aiAnalysisData = insertAiAnalysisSchema.parse({
+            documentId: document.id,
+            query: 'Text document analysis and recommendation extraction',
+            analysis: analysisResult.analysis,
+            insights: analysisResult.insights,
+          });
+          
+          await storage.createAiAnalysis(aiAnalysisData);
+          
+          // Generate recommendations from analysis
+          await recommendationGenerator.generateFromAnalysis(analysisResult, document.id);
+        } catch (error) {
+          console.error('Background AI analysis failed:', error);
+        }
+      });
+
+      res.json(document);
+    } catch (error) {
+      console.error('Text document creation error:', error);
+      res.status(500).json({ error: 'Failed to create document' });
+    }
+  });
+
   // Upload and process document
   app.post("/api/documents/upload", upload.single('file'), async (req, res) => {
     try {
