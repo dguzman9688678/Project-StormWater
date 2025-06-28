@@ -109,7 +109,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      const { category, description } = req.body;
+      const { category, description, saveToLibrary } = req.body;
+      const shouldSaveToLibrary = saveToLibrary === 'true';
 
       // Validate file
       const isValid = await documentProcessor.validateFile(req.file.path);
@@ -123,47 +124,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.file.originalname
       );
 
-      // Save document
-      const documentData = insertDocumentSchema.parse({
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        category: category || 'other',
-        description: description || null,
-        content: processed.content,
-        fileSize: req.file.size,
-      });
+      if (shouldSaveToLibrary) {
+        // Save document to permanent library (admin only)
+        const documentData = insertDocumentSchema.parse({
+          filename: req.file.filename,
+          originalName: req.file.originalname,
+          category: category || 'stormwater',
+          description: description || null,
+          content: processed.content,
+          fileSize: req.file.size,
+        });
 
-      const document = await storage.createDocument(documentData);
+        const document = await storage.createDocument(documentData);
 
-      // Start AI analysis in background
-      setImmediate(async () => {
+        // Start AI analysis in background
+        setImmediate(async () => {
+          try {
+            console.log(`Starting AI analysis for ${document.originalName} (ID: ${document.id})`);
+            const analysisResult = await aiAnalyzer.analyzeDocument(document);
+            
+            console.log(`AI analysis complete for ${document.originalName}`);
+            
+            // Save AI analysis
+            const aiAnalysisData = insertAiAnalysisSchema.parse({
+              documentId: document.id,
+              query: 'Document analysis and recommendation extraction',
+              analysis: analysisResult.analysis,
+              insights: analysisResult.insights,
+            });
+            
+            await storage.createAiAnalysis(aiAnalysisData);
+            
+            // Generate recommendations from analysis
+            await recommendationGenerator.generateFromAnalysis(analysisResult, document.id);
+          } catch (error) {
+            console.error('Background AI analysis failed:', error);
+          }
+        });
+
+        res.json({ 
+          document, 
+          savedToLibrary: true,
+          message: "Document saved to library and queued for analysis" 
+        });
+      } else {
+        // Temporary analysis only - don't save to library
+        console.log(`Performing temporary analysis for ${req.file.originalname}`);
+        
+        // Create temporary document object for analysis
+        const tempDocument = {
+          id: 0, // Temporary ID
+          filename: req.file.filename,
+          originalName: req.file.originalname,
+          category: 'stormwater',
+          description: description || null,
+          content: processed.content,
+          fileSize: req.file.size,
+          uploadedAt: new Date(),
+        };
+
+        // Perform AI analysis immediately
         try {
-          console.log(`Starting AI analysis for ${document.originalName} (ID: ${document.id})`);
-          const analysisResult = await aiAnalyzer.analyzeDocument(document);
+          const analysisResult = await aiAnalyzer.analyzeDocument(tempDocument);
+          console.log(`Temporary analysis complete for ${tempDocument.originalName}`);
           
-          console.log(`AI analysis complete for ${document.originalName}`);
-          
-          // Save AI analysis
-          const aiAnalysisData = insertAiAnalysisSchema.parse({
-            documentId: document.id,
-            query: 'Document analysis and recommendation extraction',
-            analysis: analysisResult.analysis,
-            insights: analysisResult.insights,
+          res.json({ 
+            document: tempDocument, 
+            analysis: analysisResult,
+            savedToLibrary: false,
+            message: "Document analyzed successfully. Results are temporary and not saved to library."
           });
-          
-          await storage.createAiAnalysis(aiAnalysisData);
-
-          // Generate recommendations
-          await recommendationGenerator.generateFromAnalysis(analysisResult, document.id);
         } catch (error) {
-          console.error('Background AI analysis failed:', error);
+          console.error('Temporary analysis failed:', error);
+          res.json({ 
+            document: tempDocument, 
+            savedToLibrary: false,
+            message: "Document processed successfully. Analysis temporarily unavailable."
+          });
         }
-      });
-
-      res.json({ 
-        document,
-        message: "Document uploaded and queued for analysis" 
-      });
+      }
     } catch (error) {
       console.error('Upload error:', error);
       res.status(500).json({ error: "Failed to upload document" });

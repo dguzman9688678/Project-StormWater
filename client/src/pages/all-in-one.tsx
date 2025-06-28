@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 
@@ -27,6 +28,7 @@ export default function AllInOnePage() {
   const [description, setDescription] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [saveToLibrary, setSaveToLibrary] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -59,7 +61,7 @@ export default function AllInOnePage() {
   });
 
   const uploadMutation = useMutation({
-    mutationFn: async (filesData: { files: File[], description?: string }) => {
+    mutationFn: async (filesData: { files: File[], description?: string, saveToLibrary?: boolean }) => {
       const results = [];
       const totalFiles = filesData.files.length;
       
@@ -70,6 +72,7 @@ export default function AllInOnePage() {
         if (filesData.description) {
           formData.append('description', filesData.description);
         }
+        formData.append('saveToLibrary', 'false'); // Only admin can save to library
 
         // Update progress
         const progressKey = file.name;
@@ -125,37 +128,53 @@ export default function AllInOnePage() {
       // Show analysis result for the last uploaded document
       if (results.length > 0) {
         const lastResult = results[results.length - 1];
-        setTimeout(async () => {
-          try {
-            const [analysis, recs] = await Promise.all([
-              api.getAnalysesByDocument(lastResult.document.id),
-              api.getRecommendations()
-            ]);
-            
-            setAnalysisResult({
-              document: lastResult.document,
-              analysis: analysis[0],
-              recommendations: recs.slice(0, 5)
-            });
+        
+        // If document has immediate analysis (temporary mode), show it
+        if (lastResult.analysis) {
+          setAnalysisResult({
+            document: lastResult.document,
+            analysis: lastResult.analysis,
+            recommendations: lastResult.analysis.recommendations || []
+          });
+          
+          toast({
+            title: "Analysis complete!",
+            description: `${totalUploaded} documents analyzed using reference library.`,
+          });
+        } else if (lastResult.savedToLibrary) {
+          // For library documents, wait for background analysis
+          setTimeout(async () => {
+            try {
+              const [analysis, recs] = await Promise.all([
+                api.getAnalysesByDocument(lastResult.document.id),
+                api.getRecommendations()
+              ]);
+              
+              setAnalysisResult({
+                document: lastResult.document,
+                analysis: analysis[0],
+                recommendations: recs.slice(0, 5)
+              });
 
-            queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
-            queryClient.invalidateQueries({ queryKey: ["/api/recommendations"] });
-            queryClient.invalidateQueries({ queryKey: ["/api/analyses"] });
-            queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/recommendations"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/analyses"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
 
-            toast({
-              title: "Analysis complete!",
-              description: `${totalUploaded} documents analyzed and recommendations generated.`,
-            });
-          } catch (error) {
-            console.error('Analysis error:', error);
-            toast({
-              title: "Analysis completed",
-              description: `${totalUploaded} documents uploaded successfully. Check your library for details.`,
-              variant: "default",
-            });
-          }
-        }, 2000);
+              toast({
+                title: "Analysis complete!",
+                description: `${totalUploaded} documents saved to library and analyzed.`,
+              });
+            } catch (error) {
+              console.error('Analysis error:', error);
+              toast({
+                title: "Documents saved",
+                description: `${totalUploaded} documents saved to library.`,
+                variant: "default",
+              });
+            }
+          }, 2000);
+        }
       }
     },
     onError: (error) => {
@@ -225,44 +244,12 @@ export default function AllInOnePage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* Header with Stats */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Stormwater AI</h1>
             <p className="text-gray-600 dark:text-gray-300">Complete stormwater analysis and document management</p>
           </div>
-          
-          {stats && (
-            <div className="flex gap-4">
-              <Card className="p-3">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-blue-500" />
-                  <div>
-                    <div className="text-lg font-semibold">{stats.documentCount}</div>
-                    <div className="text-xs text-gray-500">Documents</div>
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-3">
-                <div className="flex items-center gap-2">
-                  <Brain className="h-4 w-4 text-green-500" />
-                  <div>
-                    <div className="text-lg font-semibold">{stats.analysisCount}</div>
-                    <div className="text-xs text-gray-500">Analyses</div>
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-3">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-purple-500" />
-                  <div>
-                    <div className="text-lg font-semibold">{stats.recommendationCount}</div>
-                    <div className="text-xs text-gray-500">Recommendations</div>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
         </div>
 
         {/* Global Search */}
@@ -311,6 +298,12 @@ export default function AllInOnePage() {
                       onChange={(e) => setDescription(e.target.value)}
                       rows={3}
                     />
+                  </div>
+
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      <strong>Analysis Mode:</strong> Documents will be analyzed against the reference library but not permanently stored. Only the system administrator can add documents to the reference library.
+                    </p>
                   </div>
 
                   {/* File Preview Section */}
