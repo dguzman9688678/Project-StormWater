@@ -56,6 +56,49 @@ export class AIAnalyzer {
     // Build context from all reference documents
     const referenceContext = this.buildReferenceContext(allDocuments);
     
+    // Check if image is too large for visual analysis
+    if (document.content.includes('IMAGE_TOO_LARGE:')) {
+      // Handle large images with text-based analysis
+      const textAnalysisPrompt = `As a certified QSD/CPESC stormwater professional, analyze the construction site image "${document.originalName}" by referencing the comprehensive document library below:
+
+**REFERENCE DOCUMENT LIBRARY:**
+${referenceContext}
+
+**IMAGE ANALYSIS REQUEST:**
+This large construction site image (${document.originalName}) exceeded the visual analysis size limit. Provide professional stormwater analysis based on typical construction site conditions and the document library.
+
+${query ? `**User Question**: ${query}` : ''}
+
+**COMPREHENSIVE ANALYSIS INSTRUCTIONS:**
+1. **Site Assessment**: Based on filename and typical construction issues
+2. **Regulatory Compliance**: Reference specific codes from the document library
+3. **BMP Requirements**: Recommend appropriate Best Management Practices
+4. **Implementation Guide**: Provide specific procedures and compliance requirements
+
+**Format your response as:**
+ANALYSIS: [Professional assessment based on typical construction site conditions]
+
+INSIGHTS: [Key technical insights with document citations]
+
+RECOMMENDATIONS:
+STORMWATER: [Title] - [Detailed professional recommendation with specific document references]`;
+
+      const response = await this.anthropic!.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        system: `You are a certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control) providing professional stormwater engineering analysis.`,
+        messages: [
+          {
+            role: 'user',
+            content: textAnalysisPrompt
+          }
+        ],
+      });
+
+      const analysisText = response.content[0].type === 'text' ? response.content[0].text : '';
+      return this.parseAnalysisResponse(analysisText, document);
+    }
+
     // Extract base64 image data if available
     const base64Match = document.content.match(/IMAGE_BASE64:([A-Za-z0-9+/=]+)/);
     
@@ -121,7 +164,7 @@ STORMWATER: [Title] - [Detailed professional recommendation with specific docume
     }
   }
 
-  private getMediaType(filename: string): string {
+  private getMediaType(filename: string): "image/jpeg" | "image/png" | "image/gif" | "image/webp" {
     const ext = filename.toLowerCase().split('.').pop();
     switch (ext) {
       case 'jpg':

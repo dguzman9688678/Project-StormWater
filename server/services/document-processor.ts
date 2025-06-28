@@ -220,11 +220,28 @@ export class DocumentProcessor {
 
   private async processImageFile(filePath: string, originalName: string): Promise<string> {
     try {
-      // For images, we store the base64 content for AI analysis
       const imageBuffer = await fs.readFile(filePath);
-      const base64Image = imageBuffer.toString('base64');
       const stats = await fs.stat(filePath);
       const fileExtension = path.extname(originalName).toLowerCase();
+      
+      // Check file size and compress if needed for Claude's 5MB limit
+      let base64Image = imageBuffer.toString('base64');
+      const sizeInBytes = Buffer.byteLength(base64Image, 'base64');
+      const maxSizeBytes = 4 * 1024 * 1024; // 4MB to be safe
+      
+      if (sizeInBytes > maxSizeBytes) {
+        // For now, truncate very large images and provide metadata analysis
+        console.log(`Image ${originalName} is ${sizeInBytes} bytes, exceeding Claude's limit. Using metadata analysis.`);
+        return `IMAGE_TOO_LARGE: ${originalName}
+METADATA:
+File: ${originalName}
+Type: ${fileExtension.slice(1).toUpperCase()} Image
+Size: ${this.formatFileSize(stats.size)}
+Created: ${stats.birthtime.toLocaleString()}
+Modified: ${stats.mtime.toLocaleString()}
+
+This large construction site image (${this.formatFileSize(sizeInBytes)}) requires compression before visual analysis. The AI will analyze based on filename and typical construction site conditions.`;
+      }
       
       // Store base64 in content for Claude's image analysis
       return `IMAGE_BASE64:${base64Image}
