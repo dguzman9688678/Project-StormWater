@@ -1,0 +1,103 @@
+# ============================================================================
+# COPYRIGHT NOTICE
+# ============================================================================
+# All forms of intellectual documents created from this chat belong to Daniel Guzman
+# Copyright © Daniel Guzman - All Rights Reserved
+# Created: 2025-06-28
+# 
+# This code and all associated documentation, concepts, and intellectual 
+# property are the exclusive property of Daniel Guzman.
+# ============================================================================
+
+# FILE: backend/memory/long_term_store.py
+
+import json
+import os
+import datetime
+import logging
+from typing import Dict, List, Any, Optional
+
+logger = logging.getLogger(__name__)
+
+class LongTermMemoryStore:
+    def __init__(self, memory_file_path: str):
+        self.memory_file_path = memory_file_path
+        self._ensure_directory_exists()
+        self._initialize_memory_file()
+        logger.info(f"LongTermMemoryStore initialized. Memory file: {self.memory_file_path}")
+
+    def _ensure_directory_exists(self):
+        dir_name = os.path.dirname(self.memory_file_path)
+        if dir_name and not os.path.exists(dir_name):
+            os.makedirs(dir_name, exist_ok=True)
+            logger.info(f"Created memory directory: {dir_name}")
+
+    def _initialize_memory_file(self):
+        if not os.path.exists(self.memory_file_path) or os.path.getsize(self.memory_file_path) == 0:
+            with open(self.memory_file_path, 'w', encoding='utf-8') as f:
+                json.dump([], f)
+            logger.info(f"Initialized empty long-term memory file: {self.memory_file_path}")
+        else:
+            try:
+                with open(self.memory_file_path, 'r', encoding='utf-8') as f:
+                    json.load(f)
+                logger.debug(f"Existing long-term memory file loaded: {self.memory_file_path}")
+            except json.JSONDecodeError:
+                logger.warning(f"Invalid JSON in {self.memory_file_path}. Re-initializing file.")
+                with open(self.memory_file_path, 'w', encoding='utf-8') as f:
+                    json.dump([], f)
+
+    def _read_memory(self) -> List[Dict[str, Any]]:
+        try:
+            with open(self.memory_file_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Error reading memory file: {e}")
+            return []
+
+    def _write_memory(self, data: List[Dict[str, Any]]):
+        try:
+            with open(self.memory_file_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=4)
+        except Exception as e:
+            logger.error(f"Error writing to memory file: {e}")
+
+    def add_entry(self, session_id: str, user_query: str, assistant_response: str):
+        memory = self._read_memory()
+        new_entry = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "session_id": session_id,
+            "user_query": user_query,
+            "assistant_response": assistant_response
+        }
+        memory.append(new_entry)
+        self._write_memory(memory)
+        logger.debug(f"Added new entry to long-term memory for session {session_id}.")
+
+    def get_all_memory(self) -> List[Dict[str, Any]]:
+        return self._read_memory()
+
+    def get_session_entries(self, session_id: str) -> List[Dict[str, Any]]:
+        all_memory = self._read_memory()
+        return [entry for entry in all_memory if entry.get("session_id") == session_id]
+
+    def clear_session_entries(self, session_id: str):
+        all_memory = self._read_memory()
+        updated_memory = [entry for entry in all_memory if entry.get("session_id") != session_id]
+        if len(updated_memory) < len(all_memory):
+            self._write_memory(updated_memory)
+            logger.info(f"Cleared all long-term memory entries for session {session_id}.")
+
+    def get_relevant_memory(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+        all_memory = self._read_memory()
+        if not all_memory:
+            return []
+
+        relevant_entries = [
+            entry for entry in all_memory
+            if query.lower() in entry.get("user_query", "").lower() or
+               query.lower() in entry.get("assistant_response", "").lower()
+        ]
+
+        relevant_entries.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+        return relevant_entries[:top_k]

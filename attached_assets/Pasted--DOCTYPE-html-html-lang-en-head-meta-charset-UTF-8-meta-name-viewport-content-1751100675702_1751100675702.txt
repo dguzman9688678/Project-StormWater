@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stormwater-AI © Daniel Guzman</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .copyright {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+        .upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #2980b9;
+            background: #ecf0f1;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        input[type="file"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+        }
+        .error {
+            border-left-color: #e74c3c;
+            background: #fdedec;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌊 Stormwater-AI Document Analyzer</h1>
+        <div class="copyright">© Daniel Guzman - All Rights Reserved</div>
+        
+        <form id="analysisForm" enctype="multipart/form-data">
+            <div class="upload-area">
+                <div class="form-group">
+                    <label for="document">Upload Stormwater Document</label>
+                    <input type="file" id="document" name="document" accept=".pdf,.docx,.txt" required>
+                    <p style="margin-top: 10px; color: #7f8c8d;">Supported formats: PDF, DOCX, TXT</p>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="query">Your Question</label>
+                <textarea id="query" name="query" placeholder="What would you like to know about this document? (e.g., 'What are the main stormwater management recommendations?')" required></textarea>
+            </div>
+            
+            <button type="submit" id="submitBtn">Analyze Document</button>
+        </form>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing document... This may take a moment.</p>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let sessionId = null;
+
+        document.getElementById('analysisForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const fileInput = document.getElementById('document');
+            const queryInput = document.getElementById('query');
+            
+            if (!fileInput.files[0]) {
+                showError('Please select a file to upload.');
+                return;
+            }
+            
+            formData.append('file', fileInput.files[0]);
+            formData.append('user_query', queryInput.value);
+            
+            showLoading(true);
+            clearResult();
+            
+            try {
+                const headers = {};
+                if (sessionId) {
+                    headers['X-Session-ID'] = sessionId;
+                }
+                
+                const response = await fetch(API_BASE + '/analyze', {
+                    method: 'POST',
+                    body: formData,
+                    headers: headers
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                sessionId = data.session_id;
+                showResult(data.analysis);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showError('An error occurred while analyzing the document. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        });
+        
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('submitBtn').disabled = show;
+        }
+        
+        function showResult(analysis) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="result">
+                    <h3>📋 Analysis Result</h3>
+                    <div style="white-space: pre-wrap;">${analysis}</div>
+                    <div style="margin-top: 20px; font-size: 12px; color: #7f8c8d;">
+                        Powered by Stormwater-AI © Daniel Guzman
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showError(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="result error">
+                    <h3>❌ Error</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+        
+        function clearResult() {
+            document.getElementById('result').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
