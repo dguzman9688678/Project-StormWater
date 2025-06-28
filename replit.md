@@ -109,6 +109,9 @@ This is a comprehensive AI-powered stormwater solution system that automatically
 
 ## Recent Development Progress
 
+- **June 28, 2025 - Manual Upload Control**: Added manual upload button that allows users to select files, add descriptions, and only trigger analysis when ready - no more automatic uploads interrupting workflow preparation
+- **June 28, 2025 - Description Integration**: Fixed chat system to properly include user descriptions along with uploaded images, ensuring Claude receives both visual content and written context for comprehensive analysis
+- **June 28, 2025 - Dual Upload Options**: Implemented upload buttons in both main section (manual control) and chat interface (quick uploads) for flexible workflow management
 - **June 28, 2025 - Enhanced Download System**: Created comprehensive download system that includes complete chat discussion history with Claude, supporting 9 formats (Text, Markdown, HTML, PDF, Word, Excel, CSV, JSON, RTF) with all recommendations discussed in chat
 - **June 28, 2025 - Fixed Image Analysis**: Resolved syntax error in image analysis system to enable Claude's visual analysis of uploaded images with reference to library documents for comprehensive stormwater solutions
 - **June 28, 2025 - Interactive Chat Interface**: Implemented real-time chat with Claude that auto-activates after document upload, providing ongoing consultation and detailed discussions about analysis results
