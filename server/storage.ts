@@ -351,16 +351,14 @@ export class DatabaseStorage implements IStorage {
 
   async createAiAnalysis(analysis: InsertAiAnalysis): Promise<AiAnalysis> {
     try {
-      const insertData = {
-        documentId: analysis.documentId,
-        query: analysis.query,
-        analysis: analysis.analysis,
-        insights: Array.isArray(analysis.insights) ? analysis.insights : (analysis.insights ? [analysis.insights] : [])
-      };
-      
       const [aiAnalysis] = await db
         .insert(aiAnalyses)
-        .values(insertData)
+        .values({
+          documentId: analysis.documentId,
+          query: analysis.query,
+          analysis: analysis.analysis,
+          insights: analysis.insights || []
+        })
         .returning();
       return aiAnalysis;
     } catch (error) {

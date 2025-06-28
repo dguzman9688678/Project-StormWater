@@ -40,6 +40,10 @@ export const api = {
     return fetch(`/api/analyses${params}`).then(res => res.json());
   },
 
+  getAnalysesByDocument: (documentId: number) => {
+    return fetch(`/api/analyses?documentId=${documentId}`).then(res => res.json());
+  },
+
   // Search
   search: (query: string) => {
     return fetch(`/api/search?q=${encodeURIComponent(query)}`).then(res => res.json());

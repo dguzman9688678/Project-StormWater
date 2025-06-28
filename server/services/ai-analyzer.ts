@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { type Document, type InsertAiAnalysis } from "@shared/schema";
+import type { Document } from "@shared/schema";
 
 export interface AnalysisResult {
   analysis: string;
@@ -18,16 +18,14 @@ export class AIAnalyzer {
   private hasApiKey: boolean;
 
   constructor() {
-    const apiKey = process.env.ANTHROPIC_API_KEY || '';
-    this.hasApiKey = !!apiKey;
-    
-    if (!this.hasApiKey) {
-      console.warn('Anthropic API key not found. AI analysis will be simulated.');
-    } else {
+    this.hasApiKey = !!process.env.ANTHROPIC_API_KEY;
+    if (this.hasApiKey) {
       this.anthropic = new Anthropic({
-        apiKey: apiKey,
+        apiKey: process.env.ANTHROPIC_API_KEY,
       });
       console.log('Anthropic AI (Claude) initialized for stormwater engineering analysis.');
+    } else {
+      console.log('ANTHROPIC_API_KEY not found. AI analysis will use fallback mode.');
     }
   }
 
@@ -40,16 +38,9 @@ export class AIAnalyzer {
       const prompt = this.buildAnalysisPrompt(document, query);
       
       const response = await this.anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514', // Latest Claude model for best performance
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
-        system: `You are Claude, a specialized stormwater engineering AI with deep expertise in:
-- QSD (Qualified SWPPP Developer) certification requirements and guidelines
-- SWPPP (Stormwater Pollution Prevention Plan) development and implementation
-- Erosion and sediment control best practices
-- Construction site stormwater management
-- Regional stormwater regulations and compliance
-
-Provide detailed, practical, and actionable engineering recommendations based on the uploaded documents. Focus on real-world implementation and regulatory compliance.`,
+        system: `You are Claude, a specialized stormwater engineering AI with deep expertise in QSD certification, SWPPP development, erosion control, construction site stormwater management, and regional regulations. Provide detailed, practical, and actionable engineering recommendations based on uploaded documents.`,
         messages: [
           {
             role: 'user',
@@ -59,7 +50,6 @@ Provide detailed, practical, and actionable engineering recommendations based on
       });
 
       const analysisText = response.content[0].type === 'text' ? response.content[0].text : '';
-
       return this.parseAnalysisResponse(analysisText, document);
     } catch (error) {
       console.error('AI analysis failed:', error);
@@ -68,11 +58,10 @@ Provide detailed, practical, and actionable engineering recommendations based on
   }
 
   private buildAnalysisPrompt(document: Document, query?: string): string {
-    // Check if this is an image file
     const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(document.originalName);
     
-    const basePrompt = isImage ? `
-As a specialized stormwater engineering expert, analyze this site image and provide practical engineering guidance:
+    if (isImage) {
+      return `As a specialized stormwater engineering expert, analyze this site image and provide practical engineering guidance:
 
 **Image Information:**
 - Filename: ${document.originalName}
@@ -85,81 +74,77 @@ Analyze this stormwater engineering site photo for:
 - Existing erosion issues or sediment buildup
 - Installed BMPs and their effectiveness
 - Areas requiring immediate attention
-- Specific engineering recommendations with calculations` : `
-As a specialized stormwater engineering expert, analyze this document and provide practical engineering guidance:
-
-**Document Information:**
-- Title: ${document.originalName}
-- Category: ${document.category}
-- Content: ${document.content.substring(0, 4000)}${document.content.length > 4000 ? '...' : ''}`;
+- Specific engineering recommendations with calculations
 
 **Analysis Required:**
-1. **Technical Analysis**: Identify key stormwater engineering concepts, regulations, and requirements
+1. **Technical Analysis**: Identify key stormwater engineering concepts from the image
 2. **Engineering Insights**: Extract practical insights for construction site stormwater management
 3. **Actionable Recommendations**: Provide specific, implementable recommendations with detailed calculations
-4. **MATERIAL CALCULATIONS**: Calculate all required materials including:
-   - Aggregate quantities (tons), fabric areas (sq ft), pipe lengths (ft)
-   - Concrete volumes (cubic yards), reinforcement (lbs)
-   - Erosion control blanket areas (sq ft)
-   - Seed quantities (lbs/acre), mulch volumes (cubic yards)
-   - Equipment hours and labor requirements
-5. **BMP CALCULATIONS**: Include engineering calculations:
-   - Detention volumes: V = (Runoff - Infiltration) × Duration
-   - Orifice sizing: Q = Cd × A × √(2gh)
-   - Peak flow: Q = CiA (Rational Method)
-   - Sediment load calculations
-6. **COST ESTIMATES**: Material costs, labor costs, total project cost
+
+${query ? `**Specific Query**: ${query}` : ''}
 
 **Format your response as:**
 ANALYSIS: [Detailed technical analysis]
 
 INSIGHTS: [Key insights as bullet points]
 
-MATERIAL CALCULATIONS:
-- [Item]: [Quantity] [Units] @ $[Unit Cost] = $[Total]
-- [Calculations showing formulas and assumptions]
+RECOMMENDATIONS:
+STORMWATER: [Title] - [Detailed recommendation with calculations and costs]`;
+    } else {
+      return `As a specialized stormwater engineering expert, analyze this document and provide practical engineering guidance:
 
-BMP CALCULATIONS:
-- [Calculation Name]: [Formula] = [Result with units]
-- [Show all work and assumptions]
+**Document Information:**
+- Title: ${document.originalName}
+- Category: ${document.category}
+- Content: ${document.content.substring(0, 4000)}${document.content.length > 4000 ? '...' : ''}
+
+**Analysis Required:**
+1. **Technical Analysis**: Identify key stormwater engineering concepts, regulations, and requirements
+2. **Engineering Insights**: Extract practical insights for construction site stormwater management
+3. **Actionable Recommendations**: Provide specific, implementable recommendations with detailed calculations
+
+${query ? `**Specific Query**: ${query}` : ''}
+
+**Format your response as:**
+ANALYSIS: [Detailed technical analysis]
+
+INSIGHTS: [Key insights as bullet points]
 
 RECOMMENDATIONS:
-DEVELOPER: [Title] - [Detailed recommendation with calculations and costs]
-SWPPP: [Title] - [Detailed recommendation with calculations and costs]  
-EROSION: [Title] - [Detailed recommendation with calculations and costs]
-
-${query ? `\n**Specific Focus**: ${query}` : ''}
-
-Please structure your response with clear sections and provide citations referencing the source document.
-`;
-
-    return basePrompt;
+STORMWATER: [Title] - [Detailed recommendation with calculations and costs]`;
+    }
   }
 
   private parseAnalysisResponse(analysisText: string, document: Document): AnalysisResult {
-    // Simple parsing logic - in production, you'd use more sophisticated NLP
+    const analysis = this.extractSection(analysisText, 'ANALYSIS') || 
+      `Document analysis for ${document.originalName} (${document.category}). The document contains ${document.content.length} characters of content related to stormwater management.`;
+
     const insights = this.extractInsights(analysisText);
     const recommendations = this.extractRecommendations(analysisText, document);
 
     return {
-      analysis: analysisText,
+      analysis,
       insights,
-      recommendations,
+      recommendations
     };
   }
 
-  private extractInsights(text: string): string[] {
-    // Extract key insights from the analysis
-    const insights: string[] = [];
-    const lines = text.split('\n');
-    
-    for (const line of lines) {
-      if (line.includes('key insight') || line.includes('important') || line.includes('critical')) {
-        insights.push(line.trim());
-      }
-    }
+  private extractSection(text: string, sectionName: string): string {
+    const regex = new RegExp(`${sectionName}:\\s*([\\s\\S]*?)(?=\\n\\n[A-Z]+:|$)`, 'i');
+    const match = text.match(regex);
+    return match ? match[1].trim() : '';
+  }
 
-    return insights.slice(0, 5); // Limit to 5 insights
+  private extractInsights(text: string): string[] {
+    const insightsSection = this.extractSection(text, 'INSIGHTS');
+    if (!insightsSection) return ['Document successfully processed and indexed', 'Content is available for search and reference'];
+
+    const insights = insightsSection
+      .split(/[-•*]\s*/)
+      .filter(line => line.trim())
+      .map(line => line.trim());
+
+    return insights.slice(0, 5);
   }
 
   private extractRecommendations(text: string, document: Document): Array<{
@@ -169,7 +154,6 @@ Please structure your response with clear sections and provide citations referen
     subcategory?: string;
     citation: string;
   }> {
-    // Extract recommendations from the analysis
     const recommendations: Array<{
       title: string;
       content: string;
@@ -178,82 +162,87 @@ Please structure your response with clear sections and provide citations referen
       citation: string;
     }> = [];
 
-    // Simple extraction logic - in production, use more sophisticated parsing
-    const sections = text.split(/(?=QSD|SWPPP|Erosion)/i);
-    
-    for (const section of sections) {
-      let subcategory = 'General';
-      
-      if (section.toLowerCase().includes('swppp')) {
-        subcategory = 'SWPPP';
-      } else if (section.toLowerCase().includes('erosion')) {
-        subcategory = 'Erosion Control';
-      } else if (section.toLowerCase().includes('qsd')) {
-        subcategory = 'QSD';
-      }
+    const recommendationsSection = this.extractSection(text, 'RECOMMENDATIONS');
+    if (!recommendationsSection) {
+      return [{
+        title: 'Document Review Required',
+        content: 'This document has been processed and is available for search. Manual review is recommended to extract specific engineering recommendations.',
+        category: 'stormwater',
+        citation: `${document.originalName}, Full Document`
+      }];
+    }
 
-      // Extract recommendation titles and content
-      const lines = section.split('\n').filter(line => line.trim());
-      if (lines.length > 2) {
-        recommendations.push({
-          title: lines[0].replace(/^\d+\.?\s*/, '').trim() || `${subcategory} Recommendation`,
-          content: lines.slice(1, 3).join(' ').trim(),
-          category: 'stormwater',
-          subcategory,
-          citation: `${document.originalName}, Section ${recommendations.length + 1}`,
-        });
+    const lines = recommendationsSection.split('\n').filter(line => line.trim());
+    
+    for (const line of lines) {
+      if (line.includes('STORMWATER:') || line.includes('QSD:') || line.includes('SWPPP:') || line.includes('EROSION:')) {
+        const parts = line.split(' - ');
+        if (parts.length >= 2) {
+          const titlePart = parts[0].replace(/^(STORMWATER|QSD|SWPPP|EROSION):\s*/, '');
+          let subcategory = 'General';
+          
+          if (line.includes('QSD:')) subcategory = 'QSD';
+          else if (line.includes('SWPPP:')) subcategory = 'SWPPP';
+          else if (line.includes('EROSION:')) subcategory = 'Erosion Control';
+
+          recommendations.push({
+            title: titlePart.trim(),
+            content: parts.slice(1).join(' - ').trim(),
+            category: 'stormwater',
+            subcategory,
+            citation: `${document.originalName}, Section ${recommendations.length + 1}`
+          });
+        }
       }
     }
 
-    return recommendations.slice(0, 10); // Limit to 10 recommendations
+    return recommendations.slice(0, 10);
   }
 
   async generateDocument(prompt: string): Promise<string> {
-    if (!this.hasApiKey) {
+    if (!this.hasApiKey || !this.anthropic) {
       return this.generateFallbackDocument(prompt);
     }
 
     try {
-      const message = await this.anthropic!.messages.create({
-        model: "claude-sonnet-4-20250514",
+      const response = await this.anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
-        messages: [{
-          role: 'user',
-          content: prompt
-        }],
-        system: "You are a professional stormwater management expert. Generate comprehensive, accurate documents following industry standards. Include proper citations and safety considerations."
+        system: `You are a specialized stormwater engineering document generator. Create professional engineering documents with technical specifications, calculations, and regulatory compliance information.`,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
       });
 
-      return message.content[0].type === 'text' ? message.content[0].text : 'Unable to generate document content.';
+      return response.content[0].type === 'text' ? response.content[0].text : '';
     } catch (error) {
-      console.error('AI document generation error:', error);
+      console.error('Document generation failed:', error);
       return this.generateFallbackDocument(prompt);
     }
   }
 
   private generateFallbackDocument(prompt: string): string {
-    return `
-# Generated Document
+    return `# Generated Document
 
-This document was generated based on your request. Due to limited AI processing capabilities, 
-this is a template version. For a comprehensive document, please ensure proper API configuration.
+**Request:** ${prompt}
 
-## Key Sections:
-1. Problem Identification
-2. Assessment Procedures  
-3. Safety Requirements
-4. Implementation Steps
-5. Quality Control
-6. Documentation Requirements
+**Note:** This document was generated using fallback mode due to AI service limitations.
 
-## Notes:
-- Review all safety procedures before implementation
-- Verify local regulatory requirements
-- Consult with qualified professionals
-- Document all actions and findings
+## Content
 
----
-Generated: ${new Date().toLocaleDateString()}
+This document would contain detailed stormwater engineering specifications, calculations, and recommendations based on your request. To access full AI-powered document generation, please ensure the Anthropic API key is properly configured.
+
+## Recommendations
+
+- Review uploaded source documents for relevant information
+- Consult current stormwater management regulations
+- Consider site-specific conditions and requirements
+- Implement appropriate best management practices
+
+**Generated:** ${new Date().toLocaleDateString()}
 `;
   }
 
