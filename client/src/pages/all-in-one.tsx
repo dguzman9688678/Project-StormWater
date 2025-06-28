@@ -43,6 +43,17 @@ export default function AllInOnePage() {
   const [chatMessages, setChatMessages] = useState<Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date}>>([]);
   const [currentMessage, setCurrentMessage] = useState("");
   const [isChatting, setIsChatting] = useState(false);
+  const [bulkOperationMode, setBulkOperationMode] = useState(false);
+  const [selectedDocuments, setSelectedDocuments] = useState<number[]>([]);
+  const [autoAnalysisEnabled, setAutoAnalysisEnabled] = useState(true);
+  const [advancedFilters, setAdvancedFilters] = useState({
+    category: '',
+    dateRange: '',
+    fileType: '',
+    sizeRange: ''
+  });
+  const [exportInProgress, setExportInProgress] = useState(false);
+  const [templateMode, setTemplateMode] = useState<'standard' | 'professional' | 'compliance'>('standard');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -1114,22 +1125,260 @@ End of Report\\par
     chatMutation.mutate(currentMessage);
   };
 
-  const filteredDocuments = documents.filter((doc: any) => 
-    !searchQuery || doc.originalName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    doc.content.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Enhanced document filtering with advanced filters
+  const filteredDocuments = documents.filter((doc: any) => {
+    const matchesSearch = !searchQuery || 
+      doc.originalName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.content.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesCategory = !advancedFilters.category || doc.category === advancedFilters.category;
+    const matchesFileType = !advancedFilters.fileType || doc.originalName.toLowerCase().endsWith(advancedFilters.fileType);
+    
+    return matchesSearch && matchesCategory && matchesFileType;
+  });
+
+  // Bulk operations functionality
+  const handleBulkSelect = (documentId: number) => {
+    setSelectedDocuments(prev => 
+      prev.includes(documentId) 
+        ? prev.filter(id => id !== documentId)
+        : [...prev, documentId]
+    );
+  };
+
+  const handleBulkAnalysis = async () => {
+    if (selectedDocuments.length === 0) {
+      toast({
+        title: "No Documents Selected",
+        description: "Please select documents for bulk analysis",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setExportInProgress(true);
+    try {
+      const analysisPromises = selectedDocuments.map(async (docId) => {
+        const response = await fetch(`/api/documents/${docId}/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ templateMode, autoGenerate: true })
+        });
+        return response.json();
+      });
+
+      await Promise.all(analysisPromises);
+      
+      toast({
+        title: "Bulk Analysis Complete",
+        description: `Successfully analyzed ${selectedDocuments.length} documents`,
+      });
+      
+      queryClient.invalidateQueries();
+      setSelectedDocuments([]);
+    } catch (error) {
+      toast({
+        title: "Bulk Analysis Failed", 
+        description: "Some documents could not be analyzed",
+        variant: "destructive"
+      });
+    } finally {
+      setExportInProgress(false);
+    }
+  };
+
+  // Advanced export functionality
+  const handleAdvancedExport = async (format: string) => {
+    setExportInProgress(true);
+    try {
+      const exportData = {
+        documents: selectedDocuments.length > 0 ? selectedDocuments : documents.map((d: any) => d.id),
+        format,
+        templateMode,
+        includeAnalyses: true,
+        includeRecommendations: true,
+        includeChats: chatMessages.length > 0
+      };
+
+      const response = await fetch('/api/export/comprehensive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(exportData)
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `stormwater-export-${new Date().getTime()}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Could not generate export file",
+        variant: "destructive"
+      });
+    } finally {
+      setExportInProgress(false);
+    }
+  };
+
+  // Smart recommendations based on uploaded content
+  const generateSmartRecommendations = async () => {
+    if (!analysisResult) return;
+
+    try {
+      const response = await fetch('/api/smart-recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentId: analysisResult.document.id,
+          analysisContext: analysisResult.analysis,
+          templateMode
+        })
+      });
+
+      const recommendations = await response.json();
+      setAnalysisResult(prev => ({
+        ...prev,
+        recommendations: [...(prev?.recommendations || []), ...recommendations]
+      }));
+
+      toast({
+        title: "Smart Recommendations Generated",
+        description: `Added ${recommendations.length} intelligent recommendations`,
+      });
+    } catch (error) {
+      toast({
+        title: "Smart Recommendations Failed",
+        description: "Could not generate additional recommendations",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Current session recommendations are managed through analysisResult state
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* Header */}
+        {/* Enhanced Header with Quick Actions */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Stormwater AI</h1>
-            <p className="text-gray-600 dark:text-gray-300">Complete stormwater analysis and document management</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="h-8 w-8 text-blue-600" />
+              Stormwater AI
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">Professional stormwater analysis with Claude 4 AI</p>
           </div>
+          <div className="flex items-center gap-2">
+            {/* Template Mode Selector */}
+            <Select value={templateMode} onValueChange={(value: any) => setTemplateMode(value)}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Standard
+                  </div>
+                </SelectItem>
+                <SelectItem value="professional">
+                  <div className="flex items-center gap-2">
+                    <Award className="h-4 w-4" />
+                    Professional
+                  </div>
+                </SelectItem>
+                <SelectItem value="compliance">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    Compliance
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Bulk Operations Toggle */}
+            <Button
+              variant={bulkOperationMode ? "default" : "outline"}
+              onClick={() => setBulkOperationMode(!bulkOperationMode)}
+              className="flex items-center gap-2"
+            >
+              <CheckCircle className="h-4 w-4" />
+              Bulk Mode
+            </Button>
+
+            {/* Auto Analysis Toggle */}
+            <Button
+              variant={autoAnalysisEnabled ? "default" : "outline"}
+              onClick={() => setAutoAnalysisEnabled(!autoAnalysisEnabled)}
+              className="flex items-center gap-2"
+            >
+              <Zap className="h-4 w-4" />
+              Auto AI
+            </Button>
+          </div>
+        </div>
+
+        {/* Advanced Stats Dashboard */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Documents</CardTitle>
+              <Database className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.documentCount || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                {selectedDocuments.length > 0 && `${selectedDocuments.length} selected`}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">AI Analyses</CardTitle>
+              <Brain className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.analysisCount || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                Claude 4 powered
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Recommendations</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.recommendationCount || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                {analysisResult?.recommendations?.length > 0 && `${analysisResult.recommendations.length} current session`}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Chat Messages</CardTitle>
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{chatMessages.length}</div>
+              <p className="text-xs text-muted-foreground">
+                Current conversation
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Global Search */}
