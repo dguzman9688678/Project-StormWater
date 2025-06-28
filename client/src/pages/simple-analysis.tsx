@@ -140,15 +140,15 @@ export default function SimpleAnalysisPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upload and Ask Section */}
         <div className="space-y-6">
-          {/* Upload Documents */}
+          {/* Upload Documents & Images */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Upload className="h-5 w-5" />
-                Upload Documents
+                Upload Files
               </CardTitle>
               <CardDescription>
-                Upload any format: PDF, DOCX, TXT, Excel, CSV, JSON, XML
+                Upload documents (PDF, DOCX, TXT, Excel) or images (JPG, PNG, GIF) - all formats supported
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -158,7 +158,7 @@ export default function SimpleAnalysisPage() {
                 size="lg"
               >
                 <Upload className="h-4 w-4 mr-2" />
-                Upload New Document
+                Upload Documents & Images
               </Button>
               
               {documents && documents.length > 0 && (
