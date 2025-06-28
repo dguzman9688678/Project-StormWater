@@ -79,20 +79,37 @@ As a specialized stormwater engineering expert, analyze this document and provid
 **Analysis Required:**
 1. **Technical Analysis**: Identify key stormwater engineering concepts, regulations, and requirements
 2. **Engineering Insights**: Extract practical insights for construction site stormwater management
-3. **Actionable Recommendations**: Provide specific, implementable recommendations in these categories:
-   - **QSD Guidelines**: Qualified SWPPP Developer certification and inspection requirements
-   - **SWPPP Practices**: Stormwater Pollution Prevention Plan development and implementation
-   - **Erosion Control**: Best management practices for erosion and sediment control
+3. **Actionable Recommendations**: Provide specific, implementable recommendations with detailed calculations
+4. **MATERIAL CALCULATIONS**: Calculate all required materials including:
+   - Aggregate quantities (tons), fabric areas (sq ft), pipe lengths (ft)
+   - Concrete volumes (cubic yards), reinforcement (lbs)
+   - Erosion control blanket areas (sq ft)
+   - Seed quantities (lbs/acre), mulch volumes (cubic yards)
+   - Equipment hours and labor requirements
+5. **BMP CALCULATIONS**: Include engineering calculations:
+   - Detention volumes: V = (Runoff - Infiltration) × Duration
+   - Orifice sizing: Q = Cd × A × √(2gh)
+   - Peak flow: Q = CiA (Rational Method)
+   - Sediment load calculations
+6. **COST ESTIMATES**: Material costs, labor costs, total project cost
 
 **Format your response as:**
 ANALYSIS: [Detailed technical analysis]
 
 INSIGHTS: [Key insights as bullet points]
 
+MATERIAL CALCULATIONS:
+- [Item]: [Quantity] [Units] @ $[Unit Cost] = $[Total]
+- [Calculations showing formulas and assumptions]
+
+BMP CALCULATIONS:
+- [Calculation Name]: [Formula] = [Result with units]
+- [Show all work and assumptions]
+
 RECOMMENDATIONS:
-QSD: [Title] - [Detailed recommendation with regulatory citation]
-SWPPP: [Title] - [Detailed recommendation with regulatory citation]  
-EROSION: [Title] - [Detailed recommendation with regulatory citation]
+DEVELOPER: [Title] - [Detailed recommendation with calculations and costs]
+SWPPP: [Title] - [Detailed recommendation with calculations and costs]  
+EROSION: [Title] - [Detailed recommendation with calculations and costs]
 
 ${query ? `\n**Specific Focus**: ${query}` : ''}
 
