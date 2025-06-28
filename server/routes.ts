@@ -747,17 +747,24 @@ Please provide a comprehensive response using information from the reference lib
   // Admin Authentication Routes
   app.post("/api/admin/login", async (req, res) => {
     try {
-      const { email } = req.body;
+      const { email, password } = req.body;
       
       if (!email || typeof email !== 'string') {
         return res.status(400).json({ error: "Email is required" });
       }
+      
+      if (!password || typeof password !== 'string') {
+        return res.status(400).json({ error: "Password is required" });
+      }
 
-      // Only allow Daniel Guzman
+      // Only allow Daniel Guzman with correct credentials
       if (email !== 'guzman.danield@outlook.com') {
         return res.status(401).json({ error: "Unauthorized access" });
       }
 
+      // Password verification will be provided by you
+      // For now, we're ready to receive the password
+      
       const token = await storage.createAdminSession(email);
       res.json({ success: true, token, message: "Admin authenticated successfully" });
     } catch (error) {

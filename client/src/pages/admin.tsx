@@ -1,59 +1,29 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Lock, Shield, CheckCircle, AlertCircle, FileText, Award, Brain } from "lucide-react";
+import { Lock, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/lib/api";
 
 export function AdminPage() {
   const [email, setEmail] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [adminToken, setAdminToken] = useState("");
   const { toast } = useToast();
-
-  // Fetch system statistics for admin dashboard
-  const { data: stats } = useQuery({
-    queryKey: ["/api/stats"],
-    queryFn: api.getStats,
-    enabled: isAuthenticated, // Only fetch when authenticated
-  });
-
-  // Check if user is already authenticated
-  useEffect(() => {
-    const token = localStorage.getItem("adminToken");
-    if (token) {
-      verifyToken(token);
-    }
-  }, []);
-
-  const verifyToken = async (token: string) => {
-    try {
-      const response = await fetch("/api/admin/verify", {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        setIsAuthenticated(true);
-        setAdminToken(token);
-      } else {
-        localStorage.removeItem("adminToken");
-        setIsAuthenticated(false);
-      }
-    } catch (error) {
-      localStorage.removeItem("adminToken");
-      setIsAuthenticated(false);
-    }
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Missing Credentials",
+        description: "Please enter both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -62,31 +32,31 @@ export function AdminPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        setIsAuthenticated(true);
-        setAdminToken(data.token);
+        const data = await response.json();
         localStorage.setItem("adminToken", data.token);
         
         toast({
           title: "Authentication Successful",
-          description: "Welcome, Administrator",
+          description: "Welcome to the administration panel",
         });
+
+        // Redirect or show admin content here
+        window.location.reload();
       } else {
         toast({
           title: "Authentication Failed",
-          description: data.error || "Invalid credentials",
+          description: "Invalid credentials provided",
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to authenticate",
+        title: "Connection Error",
+        description: "Unable to connect to authentication service",
         variant: "destructive",
       });
     } finally {
@@ -94,35 +64,26 @@ export function AdminPage() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    setIsAuthenticated(false);
-    setAdminToken("");
-    setEmail("");
-    
-    toast({
-      title: "Logged Out",
-      description: "Admin session ended",
-    });
-  };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="container mx-auto p-6 max-w-md">
-        <Card>
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <Lock className="h-8 w-8 text-primary" />
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-6">
+      <div className="w-full max-w-md">
+        <Card className="shadow-lg border-0">
+          <CardHeader className="text-center pb-8">
+            <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+              <Lock className="h-8 w-8 text-white" />
             </div>
-            <CardTitle className="text-2xl">Administration Access</CardTitle>
-            <CardDescription>
-              Secure access for system administration
+            <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
+              Administrator Access
+            </CardTitle>
+            <CardDescription className="text-gray-600 dark:text-gray-400">
+              Secure authentication required for system administration
             </CardDescription>
           </CardHeader>
+          
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label htmlFor="email" className="text-sm font-medium text-gray-700 mb-2 block">
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Administrator Email
                 </label>
                 <Input
@@ -130,254 +91,53 @@ export function AdminPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your admin email"
+                  placeholder="admin@example.com"
+                  className="h-12"
                   required
                   disabled={isLoading}
                 />
               </div>
               
-              <Alert>
-                <Shield className="h-4 w-4" />
-                <AlertDescription>
-                  Only authorized personnel (Daniel Guzman) can access administrative functions.
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Password
+                </label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="h-12"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
+                <Shield className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800 dark:text-blue-200">
+                  Only authorized personnel can access administrative functions.
+                  Contact Daniel Guzman for access credentials.
                 </AlertDescription>
               </Alert>
 
               <Button 
                 type="submit" 
-                className="w-full" 
-                disabled={isLoading || !email}
+                className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                disabled={isLoading}
               >
-                {isLoading ? "Authenticating..." : "Authenticate"}
+                {isLoading ? "Authenticating..." : "Access Administration Panel"}
               </Button>
             </form>
           </CardContent>
         </Card>
-      </div>
-    );
-  }
 
-  return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">System Overview</h1>
-          <p className="text-muted-foreground mt-2">
-            Monitor smart solution generation performance and document library analytics
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Badge variant="secondary" className="px-3 py-1">
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Authenticated
-          </Badge>
-          <Button variant="outline" onClick={handleLogout}>
-            Logout
-          </Button>
+        <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+          <p>Stormwater AI Administration Portal</p>
+          <p className="mt-1">© 2025 Daniel Guzman. All rights reserved.</p>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* System Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              System Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span>Admin Access</span>
-                <Badge variant="default">Active</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span>Database</span>
-                <Badge variant="default">Connected</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span>AI Service</span>
-                <Badge variant="default">Available</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Solution Generation Analytics */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Solution Generation Analytics
-            </CardTitle>
-            <CardDescription>Performance metrics for smart solution system</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-blue-600" />
-                  <span>Source Documents</span>
-                </div>
-                <Badge variant="secondary" className="font-mono">
-                  {stats?.documentCount || 0}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Award className="h-4 w-4 text-green-600" />
-                  <span>Generated Solutions</span>
-                </div>
-                <Badge variant="secondary" className="font-mono">
-                  {stats?.recommendationCount || 0}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Brain className="h-4 w-4 text-purple-600" />
-                  <span>Comprehensive Analyses</span>
-                </div>
-                <Badge variant="secondary" className="font-mono">
-                  {stats?.analysisCount || 0}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* User Management */}
-        <Card>
-          <CardHeader>
-            <CardTitle>User Management</CardTitle>
-            <CardDescription>Control user access and permissions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Button className="w-full" variant="outline">
-                View User Sessions
-              </Button>
-              <Button className="w-full" variant="outline">
-                Manage Permissions
-              </Button>
-              <Button className="w-full" variant="outline">
-                View Access Logs
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Content Management */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Content Management</CardTitle>
-            <CardDescription>Manage recommendations and documents</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Button className="w-full" variant="outline">
-                Edit Recommendations
-              </Button>
-              <Button className="w-full" variant="outline">
-                Manage Templates
-              </Button>
-              <Button className="w-full" variant="outline">
-                System Backup
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* System Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle>System Configuration</CardTitle>
-            <CardDescription>Configure system settings</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Button className="w-full" variant="outline">
-                AI Settings
-              </Button>
-              <Button className="w-full" variant="outline">
-                Upload Limits
-              </Button>
-              <Button className="w-full" variant="outline">
-                Security Settings
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Analytics */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Analytics</CardTitle>
-            <CardDescription>System usage and performance</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Button className="w-full" variant="outline">
-                Usage Reports
-              </Button>
-              <Button className="w-full" variant="outline">
-                Performance Metrics
-              </Button>
-              <Button className="w-full" variant="outline">
-                Error Logs
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Emergency Controls */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-red-600">Emergency Controls</CardTitle>
-            <CardDescription>Critical system operations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Button className="w-full" variant="destructive">
-                Clear All Sessions
-              </Button>
-              <Button className="w-full" variant="destructive">
-                Reset Database
-              </Button>
-              <Button className="w-full" variant="destructive">
-                System Maintenance
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Session Info */}
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>Session Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <span className="font-medium">User:</span>
-              <p className="text-muted-foreground">Daniel Guzman</p>
-            </div>
-            <div>
-              <span className="font-medium">Email:</span>
-              <p className="text-muted-foreground">guzman.danield@outlook.com</p>
-            </div>
-            <div>
-              <span className="font-medium">Session:</span>
-              <p className="text-muted-foreground">Active</p>
-            </div>
-            <div>
-              <span className="font-medium">Access Level:</span>
-              <p className="text-muted-foreground">Full Administrator</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
