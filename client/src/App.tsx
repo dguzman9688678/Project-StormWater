@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { ChatWindow } from "@/components/chat-window";
+import ProfessionalMainPage from "@/pages/professional-main";
 import AllInOnePage from "@/pages/all-in-one";
 import Dashboard from "@/pages/dashboard";
 import RecommendationsPage from "@/pages/recommendations";
@@ -17,7 +18,8 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={AllInOnePage} />
+      <Route path="/" component={ProfessionalMainPage} />
+      <Route path="/legacy" component={AllInOnePage} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/recommendations" component={RecommendationsPage} />
       <Route path="/documents" component={DocumentsPage} />
