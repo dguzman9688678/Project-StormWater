@@ -139,10 +139,10 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
       return;
     }
 
-    if (selectedFile.size > 10 * 1024 * 1024) {
+    if (selectedFile.size > 50 * 1024 * 1024) {
       toast({
         title: "File too large",
-        description: "Please upload a file smaller than 10MB.",
+        description: "Please upload a file smaller than 50MB.",
         variant: "destructive",
       });
       return;
@@ -308,7 +308,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
                   <span className="text-muted-foreground"> or drag and drop</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  PDF, DOCX, TXT up to 10MB
+                  PDF, DOCX, TXT up to 50MB
                 </p>
               </div>
             )}

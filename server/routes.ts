@@ -11,7 +11,7 @@ import { insertDocumentSchema, insertAiAnalysisSchema } from "@shared/schema";
 
 const upload = multer({ 
   dest: 'uploads/',
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit for large PDFs
 });
 
 const documentProcessor = new DocumentProcessor();
