@@ -9,9 +9,7 @@ import { MessageCircle } from "lucide-react";
 import { Layout } from "@/components/layout/layout";
 import { ChatWindow } from "@/components/chat-window";
 import Dashboard from "@/pages/dashboard";
-import QSDPage from "@/pages/qsd";
-import SWPPPPage from "@/pages/swppp";
-import ErosionControlPage from "@/pages/erosion-control";
+import RecommendationsPage from "@/pages/recommendations";
 import DocumentsPage from "@/pages/documents";
 import AIAnalysisPage from "@/pages/ai-analysis";
 import { AdminPage } from "@/pages/admin";
@@ -22,9 +20,7 @@ function Router() {
     <Layout>
       <Switch>
         <Route path="/" component={Dashboard} />
-        <Route path="/qsd" component={QSDPage} />
-        <Route path="/swppp" component={SWPPPPage} />
-        <Route path="/erosion-control" component={ErosionControlPage} />
+        <Route path="/recommendations" component={RecommendationsPage} />
         <Route path="/documents" component={DocumentsPage} />
         <Route path="/ai-analysis" component={AIAnalysisPage} />
         <Route path="/admin" component={AdminPage} />

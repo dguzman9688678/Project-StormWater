@@ -18,9 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Developer Recommendations', href: '/qsd', icon: Award },
-  { name: 'SWPPP Guidance', href: '/swppp', icon: Shield },
-  { name: 'Erosion Control', href: '/erosion-control', icon: Mountain },
+  { name: 'Recommendations', href: '/recommendations', icon: Award },
   { name: 'Reference Documents', href: '/documents', icon: FileText },
   { name: 'AI Analysis', href: '/ai-analysis', icon: Brain },
   { name: 'Administration', href: '/admin', icon: Lock },
