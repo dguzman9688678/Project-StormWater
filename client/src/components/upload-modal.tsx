@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Upload, CloudUpload } from "lucide-react";
+import { X, Upload, CloudUpload, FileText } from "lucide-react";
 import {
   Dialog,
   DialogContent,
