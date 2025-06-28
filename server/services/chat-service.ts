@@ -22,7 +22,7 @@ export class ChatService {
 
     try {
       const response = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
         system: `You are Claude, acting as a certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control). You are a licensed stormwater consultant with extensive field experience providing professional engineering services.
 
@@ -75,7 +75,7 @@ You respond as a professional consultant would to clients, providing expert-leve
 
     try {
       const response = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
         system: `You are a stormwater engineering expert analyzing site photos and engineering drawings. Provide detailed technical analysis focusing on:
 
