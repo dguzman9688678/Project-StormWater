@@ -181,6 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           content: processed.content,
           fileSize: req.file.size,
           uploadedAt: new Date(),
+          filePath: req.file.path, // Include file path for image analysis
         };
 
         // Perform AI analysis immediately
@@ -503,7 +504,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add current document context if provided
       let currentDocContext = '';
       if (currentDocument) {
-        currentDocContext = `
+        const fileExtension = currentDocument.originalName.toLowerCase();
+        const isImage = fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif') || fileExtension.includes('.bmp') || fileExtension.includes('.webp');
+        
+        if (isImage && currentDocument.filePath) {
+          // For images, we need to handle visual analysis by sending the actual image
+          try {
+            const fs = require('fs').promises;
+            const imageBuffer = await fs.readFile(currentDocument.filePath);
+            const base64Image = imageBuffer.toString('base64');
+            
+            // Use Claude's image analysis with the document context
+            const imageAnalysisMessage = `You are a stormwater engineering expert. Analyze this uploaded image to identify any stormwater management issues, problems, BMPs, or conditions visible. Then provide specific solutions and recommendations using the reference library documents below.
+
+REFERENCE LIBRARY:
+${documentContext}
+
+User question: ${message}
+
+Please provide detailed analysis of what you see in the image and specific recommendations based on your reference materials.`;
+
+            const response = await chatService.analyzeImage(base64Image, imageAnalysisMessage);
+            return res.json({ response });
+          } catch (error) {
+            console.error('Image analysis error:', error);
+            // Fall back to text-based analysis
+          }
+        }
+        
+        if (isImage) {
+          // For images without file path, provide descriptive context
+          currentDocContext = `
+
+CURRENTLY UPLOADED IMAGE:
+Image: ${currentDocument.originalName}
+Category: ${currentDocument.category || 'stormwater'}
+Image Content: This is a stormwater-related image that needs visual analysis to identify issues, problems, or conditions.
+---
+
+`;
+        } else {
+          currentDocContext = `
 
 CURRENTLY UPLOADED DOCUMENT:
 Document: ${currentDocument.originalName}
@@ -512,6 +553,7 @@ Content: ${currentDocument.content ? currentDocument.content.substring(0, 1000) 
 ---
 
 `;
+        }
       }
 
       // Enhanced message with context

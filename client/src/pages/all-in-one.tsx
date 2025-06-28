@@ -183,7 +183,12 @@ export default function AllInOnePage() {
           });
 
           // Auto-start conversation with Claude about the uploaded document
-          const initialMessage = `I've uploaded a document called "${lastResult.document.originalName}". Can you analyze this document and tell me what stormwater issues or solutions it contains? Please reference information from your knowledge library to provide comprehensive guidance.`;
+          const fileExtension = lastResult.document.originalName.toLowerCase();
+          const isImage = fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif') || fileExtension.includes('.bmp') || fileExtension.includes('.webp');
+          
+          const initialMessage = isImage 
+            ? `I've uploaded an image called "${lastResult.document.originalName}". Please analyze this image to identify any stormwater management issues, problems, or conditions visible in the photo. Then use the documents in your reference library to provide specific solutions, recommendations, and guidance for addressing what you see in the image.`
+            : `I've uploaded a document called "${lastResult.document.originalName}". Can you analyze this document and tell me what stormwater issues or solutions it contains? Please reference information from your knowledge library to provide comprehensive guidance.`;
           
           setChatMessages([{
             id: Date.now().toString(),
