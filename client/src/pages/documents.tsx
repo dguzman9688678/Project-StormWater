@@ -1,20 +1,56 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileText, Download, Eye, Trash2, Filter, MoreHorizontal } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 
 export default function DocumentsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ["/api/documents", categoryFilter],
     queryFn: () => api.getDocuments(categoryFilter === "all" ? undefined : categoryFilter),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (documentId: number) => {
+      const response = await fetch(`/api/documents/${documentId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Document deleted",
+        description: "The document has been successfully removed.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete failed",
+        description: error.message || "Failed to delete document",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDelete = (documentId: number, documentName: string) => {
+    if (window.confirm(`Are you sure you want to delete "${documentName}"? This action cannot be undone.`)) {
+      deleteMutation.mutate(documentId);
+    }
+  };
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -167,7 +203,13 @@ export default function DocumentsPage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                   
-                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(document.id, document.originalName)}
+                    disabled={deleteMutation.isPending}
+                  >
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
