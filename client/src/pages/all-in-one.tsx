@@ -262,12 +262,7 @@ export default function AllInOnePage() {
   });
 
   const handleFileSelect = (selectedFiles: File[]) => {
-    setFiles(selectedFiles);
-    
-    uploadMutation.mutate({
-      files: selectedFiles,
-      description: description || undefined
-    });
+    setFiles(prev => [...prev, ...selectedFiles]);
   };
 
   const removeFile = (index: number) => {
@@ -280,9 +275,18 @@ export default function AllInOnePage() {
     
     const droppedFiles = Array.from(e.dataTransfer.files);
     if (droppedFiles.length > 0) {
-      handleFileSelect(droppedFiles);
+      setFiles(prev => [...prev, ...droppedFiles]);
     }
   }, []);
+
+  const handleUploadSubmit = () => {
+    if (files.length === 0) return;
+    
+    uploadMutation.mutate({
+      files: files,
+      description: description || undefined
+    });
+  };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -1149,7 +1153,9 @@ End of Report\\par
                       className="hidden"
                       onChange={(e) => {
                         const selectedFiles = Array.from(e.target.files || []);
-                        if (selectedFiles.length > 0) handleFileSelect(selectedFiles);
+                        if (selectedFiles.length > 0) {
+                          setFiles(prev => [...prev, ...selectedFiles]);
+                        }
                       }}
                       accept=".pdf,.docx,.doc,.txt,.xlsx,.xls,.csv,.json,.xml,.rtf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.html,.htm,.md,.log"
                     />
@@ -1171,6 +1177,38 @@ End of Report\\par
                       </div>
                     )}
                   </div>
+
+                  {/* Upload Button */}
+                  {files.length > 0 && (
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleUploadSubmit}
+                        disabled={uploadMutation.isPending}
+                        className="flex-1"
+                      >
+                        {uploadMutation.isPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Uploading & Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 mr-2" />
+                            Upload & Analyze {files.length} File{files.length > 1 ? 's' : ''}
+                          </>
+                        )}
+                      </Button>
+                      
+                      {!uploadMutation.isPending && (
+                        <Button 
+                          variant="outline"
+                          onClick={() => setFiles([])}
+                        >
+                          Clear All
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
