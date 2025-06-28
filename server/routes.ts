@@ -25,7 +25,7 @@ const documentExporter = new DocumentExporter();
 const documentGenerator = new DocumentGenerator();
 const chatService = new ChatService();
 const webSearchService = new WebSearchService();
-const claude4MasterAnalyzer = new Claude4MasterAnalyzer();
+
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize with template recommendations
