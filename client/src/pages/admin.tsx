@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Lock, Shield, CheckCircle, AlertCircle } from "lucide-react";
+import { Lock, Shield, CheckCircle, AlertCircle, FileText, Award, Brain } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 
 export function AdminPage() {
   const [email, setEmail] = useState("");
@@ -13,6 +15,13 @@ export function AdminPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [adminToken, setAdminToken] = useState("");
   const { toast } = useToast();
+
+  // Fetch system statistics for admin dashboard
+  const { data: stats } = useQuery({
+    queryKey: ["/api/stats"],
+    queryFn: api.getStats,
+    enabled: isAuthenticated, // Only fetch when authenticated
+  });
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -190,6 +199,48 @@ export function AdminPage() {
               <div className="flex justify-between">
                 <span>AI Service</span>
                 <Badge variant="default">Available</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* System Statistics */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              System Statistics
+            </CardTitle>
+            <CardDescription>Current system data overview</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-blue-600" />
+                  <span>Documents</span>
+                </div>
+                <Badge variant="secondary" className="font-mono">
+                  {stats?.documentCount || 0}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Award className="h-4 w-4 text-green-600" />
+                  <span>Recommendations</span>
+                </div>
+                <Badge variant="secondary" className="font-mono">
+                  {stats?.recommendationCount || 0}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Brain className="h-4 w-4 text-purple-600" />
+                  <span>AI Analyses</span>
+                </div>
+                <Badge variant="secondary" className="font-mono">
+                  {stats?.analysisCount || 0}
+                </Badge>
               </div>
             </div>
           </CardContent>
