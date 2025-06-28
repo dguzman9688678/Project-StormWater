@@ -784,7 +784,7 @@ Please provide a comprehensive response using information from the reference lib
       }
 
       // Verify password
-      if (password !== '529504Djg1.') {
+      if (password !== '529504Djg1') {
         return res.status(401).json({ error: "Invalid credentials" });
       }
       
