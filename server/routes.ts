@@ -382,78 +382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Claude 4 Enhanced Analysis - Maximum Capability Mode
-  app.post("/api/claude4/enhanced-analysis", async (req, res) => {
-    try {
-      const { documentId, query } = req.body;
-      
-      if (!documentId) {
-        return res.status(400).json({ error: 'Document ID required' });
-      }
 
-      const document = await storage.getDocument(documentId);
-      if (!document) {
-        return res.status(404).json({ error: 'Document not found' });
-      }
-
-      console.log(`🚀 CLAUDE 4 MAXIMUM CAPABILITY ANALYSIS: ${document.originalName}`);
-      
-      const result = await claude4MasterAnalyzer.performMaximumCapabilityAnalysis(document, query);
-      
-      res.json({
-        success: true,
-        analysis: result,
-        message: 'Claude 4 maximum capability analysis completed',
-        featuresUsed: [
-          'Extended Thinking Mode (128K tokens)',
-          'Parallel Processing Streams',
-          '64K Output Token Capability',
-          'Enhanced Tool Integration',
-          'Professional QSD/CPESC Analysis',
-          'Memory-Based Context Building'
-        ]
-      });
-
-    } catch (error) {
-      console.error('Claude 4 enhanced analysis error:', error);
-      res.status(500).json({ 
-        error: 'Claude 4 enhanced analysis failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  // Claude 4 Capabilities Information
-  app.get("/api/claude4/capabilities", async (req, res) => {
-    res.json({
-      claude4Features: {
-        extendedThinkingMode: true,
-        parallelProcessing: true,
-        maxOutputTokens: 16384,
-        enhancedToolIntegration: true,
-        hybridReasoningArchitecture: true,
-        memoryCapabilities: true,
-        professionalAnalysis: true,
-        maxContextWindow: 200000
-      },
-      analysisCapabilities: [
-        'Extended Thinking with 128K token budget',
-        'Parallel multi-stream processing', 
-        'Professional QSD/CPESC expertise',
-        'Comprehensive regulatory compliance',
-        'Advanced risk assessment',
-        'Cost-benefit optimization',
-        'Implementation roadmapping',
-        'Memory-based context building'
-      ],
-      performanceMetrics: {
-        analysisDepth: 'Professional consultant level ($300/hour equivalent)',
-        processingSpeed: 'Sub-2 second response targeting',
-        accuracyLevel: 'QSD/CPESC certification standards',
-        comprehensiveness: '64K output token capability'
-      }
-    });
-  });
 
   // Global search
   app.get("/api/search", async (req, res) => {
