@@ -1,16 +1,14 @@
 import { useState } from "react";
-import { Search, Upload, Camera, FileText } from "lucide-react";
+import { Search, Upload, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UploadModal } from "@/components/upload-modal";
-import { ImageAnalyzer } from "@/components/image-analyzer";
 import { DocumentGenerator } from "@/components/document-generator";
 import { SearchResults } from "@/components/search-results";
 import { useSearch } from "@/hooks/use-search";
 
 export function Header() {
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showImageAnalyzer, setShowImageAnalyzer] = useState(false);
   const [showDocumentGenerator, setShowDocumentGenerator] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const { query, setQuery, results, isLoading } = useSearch();
@@ -46,9 +44,6 @@ export function Header() {
                 <Button size="sm" onClick={() => setShowUploadModal(true)}>
                   <Upload className="h-4 w-4" />
                 </Button>
-                <Button size="sm" onClick={() => setShowImageAnalyzer(true)} variant="outline">
-                  <Camera className="h-4 w-4" />
-                </Button>
                 <Button size="sm" onClick={() => setShowDocumentGenerator(true)} variant="outline">
                   <FileText className="h-4 w-4" />
                 </Button>
@@ -83,11 +78,7 @@ export function Header() {
             <div className="hidden lg:flex items-center space-x-2">
               <Button onClick={() => setShowUploadModal(true)} className="text-sm">
                 <Upload className="h-4 w-4 mr-2" />
-                Upload Document
-              </Button>
-              <Button onClick={() => setShowImageAnalyzer(true)} variant="outline" className="text-sm">
-                <Camera className="h-4 w-4 mr-2" />
-                Analyze Image
+                Upload Files & Images
               </Button>
               <Button onClick={() => setShowDocumentGenerator(true)} variant="outline" className="text-sm">
                 <FileText className="h-4 w-4 mr-2" />
@@ -102,11 +93,6 @@ export function Header() {
       <UploadModal 
         isOpen={showUploadModal} 
         onClose={() => setShowUploadModal(false)} 
-      />
-      
-      <ImageAnalyzer
-        isOpen={showImageAnalyzer}
-        onClose={() => setShowImageAnalyzer(false)}
       />
       
       <DocumentGenerator

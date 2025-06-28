@@ -127,13 +127,16 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   };
 
   const handleFileSelect = (selectedFile: File) => {
-    const allowedTypes = ['.pdf', '.docx', '.doc', '.txt', '.xlsx', '.xls', '.csv', '.json', '.xml', '.rtf'];
+    const allowedTypes = [
+      '.pdf', '.docx', '.doc', '.txt', '.xlsx', '.xls', '.csv', '.json', '.xml', '.rtf',
+      '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.html', '.htm', '.md', '.log'
+    ];
     const fileExtension = '.' + selectedFile.name.split('.').pop()?.toLowerCase();
     
     if (!allowedTypes.includes(fileExtension)) {
       toast({
         title: "Invalid file type",
-        description: "Please upload a supported document format (PDF, DOCX, TXT, Excel, CSV, JSON, XML, RTF).",
+        description: "Please upload a supported format: Documents (PDF, DOCX, TXT, Excel, CSV, JSON, XML, RTF, HTML, MD) or Images (JPG, PNG, GIF, BMP, WEBP).",
         variant: "destructive",
       });
       return;
@@ -299,7 +302,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
                     id="file-upload"
                     type="file"
                     className="hidden"
-                    accept=".pdf,.docx,.txt"
+                    accept=".pdf,.docx,.doc,.txt,.xlsx,.xls,.csv,.json,.xml,.rtf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.html,.htm,.md,.log"
                     onChange={(e) => {
                       const selectedFile = e.target.files?.[0];
                       if (selectedFile) handleFileSelect(selectedFile);
@@ -308,7 +311,8 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
                   <span className="text-muted-foreground"> or drag and drop</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  PDF, DOCX, TXT up to 50MB
+                  Documents: PDF, DOCX, TXT, Excel, CSV, JSON, XML, RTF, HTML, MD<br/>
+                  Images: JPG, PNG, GIF, BMP, WEBP - All formats up to 50MB
                 </p>
               </div>
             )}
