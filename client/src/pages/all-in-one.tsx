@@ -1147,9 +1147,8 @@ End of Report\\par
         </Card>
 
         <Tabs defaultValue="main" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="main">Upload, Analyze & Recommendations</TabsTrigger>
-            <TabsTrigger value="analysis-tool">AI Analysis Tool</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="main">Upload & Analyze</TabsTrigger>
             <TabsTrigger value="admin">Administrator</TabsTrigger>
           </TabsList>
 
