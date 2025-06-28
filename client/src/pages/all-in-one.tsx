@@ -133,6 +133,8 @@ export default function AllInOnePage() {
         
         // If document has immediate analysis (temporary mode), show it
         if (lastResult.analysis) {
+          console.log('Analysis result received:', lastResult.analysis);
+          console.log('Recommendations found:', lastResult.analysis.recommendations);
           setAnalysisResult({
             document: lastResult.document,
             analysis: lastResult.analysis,
@@ -509,15 +511,22 @@ ${rec.citation ? `**Source:** ${rec.citation}` : ''}
                         <div>
                           <h4 className="font-medium mb-2">Key Recommendations</h4>
                           <div className="space-y-2">
-                            {analysisResult.recommendations.slice(0, 3).map((rec: any) => (
-                              <div key={rec.id} className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border-l-4 border-blue-500">
+                            {analysisResult.recommendations.slice(0, 3).map((rec: any, index: number) => (
+                              <div key={rec.id || `rec-preview-${index}`} className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border-l-4 border-blue-500">
                                 <div className="font-medium text-sm">{rec.title}</div>
                                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                                   {rec.content.substring(0, 150)}...
                                 </p>
-                                <Badge variant="outline" className="mt-2 text-xs">
-                                  {rec.subcategory || 'General'}
-                                </Badge>
+                                <div className="mt-2 space-y-1">
+                                  <Badge variant="outline" className="text-xs">
+                                    {rec.subcategory || rec.category || 'General'}
+                                  </Badge>
+                                  {rec.citation && (
+                                    <div className="text-xs text-green-600 dark:text-green-400 font-medium">
+                                      📚 {rec.citation.substring(0, 50)}...
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -557,19 +566,28 @@ ${rec.citation ? `**Source:** ${rec.citation}` : ''}
                 <CardContent>
                   <div className="grid gap-4">
                     {analysisResult.recommendations.map((rec: any, index: number) => (
-                      <div key={index} className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                      <div key={rec.id || `rec-${index}`} className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-900/20">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <h3 className="font-medium text-blue-900 dark:text-blue-100">{rec.title}</h3>
                             <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
                               {rec.content}
                             </p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="outline" className="border-blue-300 text-blue-700 dark:text-blue-300">
-                                {rec.subcategory || rec.category || 'Stormwater'}
-                              </Badge>
+                            <div className="space-y-2 mt-2">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="border-blue-300 text-blue-700 dark:text-blue-300">
+                                  {rec.subcategory || rec.category || 'Stormwater'}
+                                </Badge>
+                              </div>
                               {rec.citation && (
-                                <span className="text-xs text-blue-600 dark:text-blue-400">{rec.citation}</span>
+                                <div className="p-2 bg-white dark:bg-gray-800 rounded border-l-2 border-green-500">
+                                  <div className="text-xs font-medium text-green-700 dark:text-green-300 mb-1">
+                                    📚 Source Reference:
+                                  </div>
+                                  <div className="text-xs text-gray-700 dark:text-gray-300">
+                                    {rec.citation}
+                                  </div>
+                                </div>
                               )}
                             </div>
                           </div>
