@@ -8,11 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { api } from "@/lib/api";
 
 export default function DocumentsPage() {
-  const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ["/api/documents", categoryFilter],
-    queryFn: () => api.getDocuments(categoryFilter || undefined),
+    queryFn: () => api.getDocuments(categoryFilter === "all" ? undefined : categoryFilter),
   });
 
   const formatFileSize = (bytes: number) => {
@@ -62,7 +62,7 @@ export default function DocumentsPage() {
             <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All categories</SelectItem>
+            <SelectItem value="all">All categories</SelectItem>
             <SelectItem value="qsd">QSD Guidelines</SelectItem>
             <SelectItem value="swppp">SWPPP Documentation</SelectItem>
             <SelectItem value="erosion">Erosion Control</SelectItem>

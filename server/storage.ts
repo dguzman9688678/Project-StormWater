@@ -64,6 +64,7 @@ export class MemStorage implements IStorage {
       ...doc,
       id: this.currentDocumentId++,
       uploadedAt: new Date(),
+      description: doc.description || null,
     };
     this.documents.set(document.id, document);
     return document;
@@ -95,6 +96,9 @@ export class MemStorage implements IStorage {
       id: this.currentRecommendationId++,
       createdAt: new Date(),
       isBookmarked: rec.isBookmarked || false,
+      subcategory: rec.subcategory || null,
+      sourceDocumentId: rec.sourceDocumentId || null,
+      citation: rec.citation || null,
     };
     this.recommendations.set(recommendation.id, recommendation);
     return recommendation;
@@ -144,6 +148,7 @@ export class MemStorage implements IStorage {
       ...analysis,
       id: this.currentAnalysisId++,
       createdAt: new Date(),
+      insights: Array.isArray(analysis.insights) ? analysis.insights : null,
     };
     this.aiAnalyses.set(aiAnalysis.id, aiAnalysis);
     return aiAnalysis;

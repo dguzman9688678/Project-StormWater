@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a full-stack TypeScript application that combines AI-powered document analysis with engineering best practices for stormwater management. The system allows users to upload and analyze engineering documents, receive AI-generated recommendations, and access organized guidelines for QSD (Qualified SWPPP Developer), SWPPP (Stormwater Pollution Prevention Plan), and erosion control practices.
+This is a comprehensive engineering support tool that provides QSD, SWPPP, and erosion control recommendations from uploaded reference documents. The system combines AI-powered document analysis with engineering best practices for stormwater management, allowing users to upload and analyze engineering documents, receive AI-generated recommendations, and access organized guidelines for professional stormwater engineering support.
 
 ## System Architecture
 
@@ -101,4 +101,19 @@ This is a full-stack TypeScript application that combines AI-powered document an
 
 ## User Preferences
 
-Preferred communication style: Simple, everyday language.
+- **Communication Style**: Simple, everyday language
+- **Project Ownership**: All intellectual property belongs to Daniel Guzman (guzman.danield@outlook.com)
+- **Application Purpose**: Personal engineering support tool providing practical QSD, SWPPP, and erosion control recommendations
+- **Focus**: Actual support for engineering work, not projects or user management
+- **Integration Goal**: Dashboard that provides comprehensive recommendations from uploaded reference documents
+
+## Recent Development Progress
+
+- **June 28, 2025**: Created comprehensive React/Express dashboard with:
+  - Document upload and processing functionality
+  - AI-powered analysis integration
+  - Categorized recommendations (QSD, SWPPP, Erosion Control)
+  - Global search across documents and recommendations
+  - Template recommendations pre-loaded for demonstration
+  - Professional UI with sidebar navigation and responsive design
+  - Ready for integration with existing Python/FastAPI backend components

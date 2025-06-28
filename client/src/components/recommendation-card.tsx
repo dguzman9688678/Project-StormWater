@@ -21,9 +21,13 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
     },
   });
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (!dateObj || isNaN(dateObj.getTime())) {
+      return 'Recent';
+    }
     return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
-      Math.floor((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+      Math.floor((dateObj.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
       'day'
     );
   };
