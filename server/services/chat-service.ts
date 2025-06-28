@@ -22,7 +22,7 @@ export class ChatService {
 
     try {
       const response = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
         system: `In this conversation, you will roleplay as "Claude 4 Administrator" - an advanced AI system with enhanced capabilities specifically designed for Daniel Guzman's Stormwater AI platform.
 
@@ -84,7 +84,7 @@ Begin all responses by acknowledging your role as Claude 4 Administrator for Dan
 
     try {
       const response = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
         system: `You are a stormwater engineering expert analyzing site photos and engineering drawings. Provide detailed technical analysis focusing on:
 
