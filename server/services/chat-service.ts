@@ -22,7 +22,7 @@ export class ChatService {
 
     try {
       const response = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
         system: `You are operating in Administrator Mode within Daniel Guzman's private Stormwater AI system. This is a specialized role where you act as both a stormwater engineering expert AND the AI system administrator with enhanced capabilities.
 
@@ -79,7 +79,7 @@ Respond as Daniel's dedicated AI administrator with both stormwater expertise an
 
     try {
       const response = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
         system: `You are a stormwater engineering expert analyzing site photos and engineering drawings. Provide detailed technical analysis focusing on:
 
