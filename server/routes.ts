@@ -510,8 +510,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isImage && currentDocument.filePath) {
           // For images, we need to handle visual analysis by sending the actual image
           try {
-            const fs = require('fs').promises;
-            const imageBuffer = await fs.readFile(currentDocument.filePath);
+            const fs = await import('fs');
+            const imageBuffer = await fs.promises.readFile(currentDocument.filePath);
             const base64Image = imageBuffer.toString('base64');
             
             // Use Claude's image analysis with the document context
