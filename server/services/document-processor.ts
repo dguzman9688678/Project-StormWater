@@ -190,7 +190,7 @@ export class DocumentProcessor {
       .trim();
   }
 
-  async validateFile(filePath: string, maxSizeBytes: number = 10 * 1024 * 1024): Promise<boolean> {
+  async validateFile(filePath: string, maxSizeBytes: number = 50 * 1024 * 1024): Promise<boolean> {
     try {
       const stats = await fs.stat(filePath);
       return stats.size <= maxSizeBytes;
