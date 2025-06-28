@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, FileText, Brain, Download, CheckCircle, AlertCircle, Loader2, Search, BarChart3, Bookmark, BookmarkCheck, Trash2, X, Database } from "lucide-react";
+import { Upload, FileText, Brain, Download, CheckCircle, AlertCircle, Loader2, Search, BarChart3, Bookmark, BookmarkCheck, Trash2, X, Database, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -269,6 +269,37 @@ export default function AllInOnePage() {
 
   const removeFile = (index: number) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/documents/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete document');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "Document deleted",
+        description: "Document removed from reference library",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Delete failed",
+        description: "Could not delete document from library",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteDocument = (id: number) => {
+    if (window.confirm('Are you sure you want to delete this document from the reference library? This action cannot be undone.')) {
+      deleteMutation.mutate(id);
+    }
   };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -1503,20 +1534,107 @@ End of Report\\par
               </p>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Source Library Management */}
-              <Card>
+            {/* Library Management Upload Section */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="h-5 w-5" />
+                  Add Documents to Reference Library
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="admin-description">Description (optional)</Label>
+                    <Textarea
+                      id="admin-description"
+                      placeholder="Describe the document purpose and contents..."
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer
+                      ${dragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600'}
+                      hover:border-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800`}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onClick={() => document.getElementById('admin-file-input')?.click()}
+                  >
+                    <input
+                      id="admin-file-input"
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        const selectedFiles = Array.from(e.target.files || []);
+                        if (selectedFiles.length > 0) {
+                          // Upload to library for admin
+                          const formData = new FormData();
+                          selectedFiles.forEach(file => formData.append('file', file));
+                          if (description) formData.append('description', description);
+                          formData.append('saveToLibrary', 'true');
+                          
+                          fetch('/api/documents/upload', {
+                            method: 'POST',
+                            body: formData,
+                          }).then(res => res.json()).then(() => {
+                            toast({
+                              title: "Files added to library",
+                              description: `${selectedFiles.length} file(s) added to reference library`,
+                            });
+                            queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+                            setDescription('');
+                          }).catch(() => {
+                            toast({
+                              title: "Upload failed",
+                              description: "Failed to add files to library",
+                              variant: "destructive",
+                            });
+                          });
+                        }
+                      }}
+                      accept=".pdf,.docx,.doc,.txt,.xlsx,.xls,.csv,.json,.xml,.rtf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.html,.htm,.md,.log"
+                    />
+                    
+                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      Drop files here or click to add to reference library
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      These documents will be permanently saved and used by AI for analysis
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Source Library Management */}
+            <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Database className="h-5 w-5" />
-                    Reference Document Library
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Database className="h-5 w-5" />
+                      Reference Document Library ({filteredDocuments.length} documents)
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.location.reload()}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh
+                    </Button>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-[400px]">
                     <div className="space-y-3">
                       {filteredDocuments.map((doc: any) => (
-                        <div key={doc.id} className="p-4 border rounded-lg">
+                        <div key={doc.id} className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <h3 className="font-medium">{doc.originalName}</h3>
@@ -1528,14 +1646,33 @@ End of Report\\par
                                 <span className="text-xs text-gray-500">
                                   {new Date(doc.uploadedAt).toLocaleDateString()}
                                 </span>
+                                <span className="text-xs text-gray-500">
+                                  {doc.fileSize ? `${(doc.fileSize / 1024 / 1024).toFixed(1)}MB` : ''}
+                                </span>
                               </div>
                             </div>
-                            <Button variant="outline" size="sm">
-                              <Download className="h-4 w-4" />
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm">
+                                <Download className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => handleDeleteDocument(doc.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ))}
+                      {filteredDocuments.length === 0 && (
+                        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                          <Database className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                          <p>No documents in reference library</p>
+                          <p className="text-sm">Upload documents above to build your AI reference library</p>
+                        </div>
+                      )}
                     </div>
                   </ScrollArea>
                 </CardContent>
@@ -1579,7 +1716,6 @@ End of Report\\par
                   </ScrollArea>
                 </CardContent>
               </Card>
-            </div>
           </TabsContent>
         </Tabs>
       </div>
