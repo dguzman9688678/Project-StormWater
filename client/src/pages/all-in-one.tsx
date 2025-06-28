@@ -25,6 +25,11 @@ export default function AllInOnePage() {
   const [files, setFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  
+  // Clear analysis results when component mounts (new session)
+  useState(() => {
+    setAnalysisResult(null);
+  });
   const [description, setDescription] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
@@ -43,10 +48,7 @@ export default function AllInOnePage() {
     queryFn: () => api.getDocuments(),
   });
 
-  const { data: recommendations = [] } = useQuery({
-    queryKey: ["/api/recommendations"],
-    queryFn: () => api.getRecommendations(),
-  });
+  // Remove historical recommendations - only show current session recommendations
 
   const { data: analyses = [] } = useQuery({
     queryKey: ["/api/analyses"],
@@ -157,7 +159,7 @@ export default function AllInOnePage() {
               });
 
               queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
-              queryClient.invalidateQueries({ queryKey: ["/api/recommendations"] });
+              // No need to invalidate recommendations - using current session only
               queryClient.invalidateQueries({ queryKey: ["/api/analyses"] });
               queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
 
@@ -190,7 +192,7 @@ export default function AllInOnePage() {
   const bookmarkMutation = useMutation({
     mutationFn: (id: number) => api.toggleBookmark(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/recommendations"] });
+      // No need to invalidate recommendations - using current session only
       toast({
         title: "Bookmark updated",
         description: "Recommendation bookmark status changed.",
@@ -236,10 +238,7 @@ export default function AllInOnePage() {
     doc.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredRecommendations = recommendations.filter((rec: any) => 
-    !searchQuery || rec.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    rec.content.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Current session recommendations are managed through analysisResult state
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -269,15 +268,14 @@ export default function AllInOnePage() {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="upload" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="upload">Upload & Analyze</TabsTrigger>
-            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+        <Tabs defaultValue="main" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="main">Upload, Analyze & Recommendations</TabsTrigger>
             <TabsTrigger value="admin">Administrator</TabsTrigger>
           </TabsList>
 
-          {/* Upload & Analyze Tab */}
-          <TabsContent value="upload" className="space-y-6">
+          {/* Main Tab - Upload, Analyze & Recommendations */}
+          <TabsContent value="main" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Upload Section */}
               <Card>
@@ -445,51 +443,45 @@ export default function AllInOnePage() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
 
-
-
-          {/* Recommendations Tab */}
-          <TabsContent value="recommendations">
-            <Card>
-              <CardHeader>
-                <CardTitle>AI Recommendations</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[500px]">
-                  <div className="space-y-3">
-                    {filteredRecommendations.map((rec: any) => (
-                      <div key={rec.id} className="p-4 border rounded-lg">
+            {/* Current Session Recommendations */}
+            {analysisResult && analysisResult.recommendations && analysisResult.recommendations.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    Current Session Recommendations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4">
+                    {analysisResult.recommendations.map((rec: any, index: number) => (
+                      <div key={index} className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-900/20">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h3 className="font-medium">{rec.title}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                            <h3 className="font-medium text-blue-900 dark:text-blue-100">{rec.title}</h3>
+                            <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
                               {rec.content}
                             </p>
                             <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="outline">{rec.subcategory || 'General'}</Badge>
-                              <span className="text-xs text-gray-500">{rec.citation}</span>
+                              <Badge variant="outline" className="border-blue-300 text-blue-700 dark:text-blue-300">
+                                {rec.subcategory || rec.category || 'Stormwater'}
+                              </Badge>
+                              {rec.citation && (
+                                <span className="text-xs text-blue-600 dark:text-blue-400">{rec.citation}</span>
+                              )}
                             </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => bookmarkMutation.mutate(rec.id)}
-                          >
-                            {rec.isBookmarked ? (
-                              <BookmarkCheck className="h-4 w-4 text-yellow-500" />
-                            ) : (
-                              <Bookmark className="h-4 w-4" />
-                            )}
-                          </Button>
                         </div>
                       </div>
                     ))}
                   </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
+
+
 
           {/* Administrator Tab */}
           <TabsContent value="admin" className="space-y-6">
