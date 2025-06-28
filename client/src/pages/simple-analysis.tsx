@@ -133,7 +133,7 @@ export default function SimpleAnalysisPage() {
           Stormwater AI
         </h1>
         <p className="text-sm md:text-base text-muted-foreground">
-          Professional stormwater engineering analysis and document generation system
+          Professional stormwater analysis and document generation system
         </p>
       </div>
 

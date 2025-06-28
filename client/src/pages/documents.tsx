@@ -223,7 +223,7 @@ export default function DocumentsPage() {
               No documents uploaded yet
             </h3>
             <p className="text-muted-foreground">
-              Upload your first engineering document to get started with AI-powered analysis and recommendations.
+              Upload your first document to get started with AI-powered analysis and recommendations.
             </p>
           </div>
         )}

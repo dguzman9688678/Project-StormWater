@@ -26,7 +26,7 @@ export function ChatWindow({ isOpen, onClose, onMinimize, isMinimized }: ChatWin
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! I\'m Claude, your stormwater engineering AI assistant. I can help with QSD guidelines, SWPPP development, erosion control practices, and analyze your documents. What would you like to discuss?',
+      content: 'Hello! I\'m Claude, your stormwater AI assistant. I can help with developer guidelines, SWPPP development, erosion control practices, and analyze your documents. What would you like to discuss?',
       timestamp: new Date()
     }
   ]);
@@ -188,7 +188,7 @@ export function ChatWindow({ isOpen, onClose, onMinimize, isMinimized }: ChatWin
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask about stormwater engineering, QSD, SWPPP, or erosion control..."
+                placeholder="Ask about stormwater practices, SWPPP, or erosion control..."
                 className="flex-1 min-h-[40px] max-h-24 resize-none"
                 disabled={chatMutation.isPending}
               />

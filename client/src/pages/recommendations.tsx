@@ -54,7 +54,7 @@ export default function RecommendationsPage() {
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          All categories are shown together as one comprehensive engineering guidance system
+          All categories are shown together as one comprehensive guidance system
         </p>
       </div>
 
@@ -87,7 +87,7 @@ export default function RecommendationsPage() {
               No recommendations found
             </h3>
             <p className="text-muted-foreground">
-              Upload engineering documents to generate comprehensive recommendations automatically.
+              Upload documents to generate comprehensive recommendations automatically.
             </p>
           </div>
         )}
