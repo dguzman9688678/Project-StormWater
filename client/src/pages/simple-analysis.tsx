@@ -126,7 +126,7 @@ export default function SimpleAnalysisPage() {
           Stormwater AI
         </h1>
         <p className="text-sm md:text-base text-muted-foreground">
-          Upload any problem document (e.g., "collapsing culvert") → AI analyzes your entire library → Auto-generates inspection forms, JSAs, maintenance plans with proper citations
+          Professional stormwater engineering analysis and document generation system
         </p>
       </div>
 
