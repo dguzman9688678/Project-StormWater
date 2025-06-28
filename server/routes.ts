@@ -10,7 +10,7 @@ import { DocumentExporter } from "./services/document-exporter";
 import { DocumentGenerator } from "./services/document-generator";
 import { ChatService } from "./services/chat-service";
 import { WebSearchService } from "./services/web-search-service";
-import { Claude4MasterAnalyzer } from "./services/claude4-master-analyzer";
+
 import { insertDocumentSchema, insertAiAnalysisSchema } from "@shared/schema";
 
 const upload = multer({ 
