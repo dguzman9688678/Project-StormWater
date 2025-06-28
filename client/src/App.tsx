@@ -6,9 +6,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
-import { Layout } from "@/components/layout/layout";
+// Removed layout import for single-page design
 import { ChatWindow } from "@/components/chat-window";
-import UnifiedAnalysisPage from "@/pages/unified-analysis";
+import AllInOnePage from "@/pages/all-in-one";
 import Dashboard from "@/pages/dashboard";
 import RecommendationsPage from "@/pages/recommendations";
 import DocumentsPage from "@/pages/documents";
@@ -17,16 +17,14 @@ import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
-    <Layout>
-      <Switch>
-        <Route path="/" component={UnifiedAnalysisPage} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/recommendations" component={RecommendationsPage} />
-        <Route path="/documents" component={DocumentsPage} />
-        <Route path="/admin" component={AdminPage} />
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
+    <Switch>
+      <Route path="/" component={AllInOnePage} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/recommendations" component={RecommendationsPage} />
+      <Route path="/documents" component={DocumentsPage} />
+      <Route path="/admin" component={AdminPage} />
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
