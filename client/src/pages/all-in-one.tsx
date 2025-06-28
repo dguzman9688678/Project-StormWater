@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, FileText, Brain, Download, CheckCircle, AlertCircle, Loader2, Search, BarChart3, Bookmark, BookmarkCheck, Trash2 } from "lucide-react";
+import { Upload, FileText, Brain, Download, CheckCircle, AlertCircle, Loader2, Search, BarChart3, Bookmark, BookmarkCheck, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,11 +21,12 @@ interface AnalysisResult {
 }
 
 export default function AllInOnePage() {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [description, setDescription] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -58,60 +59,112 @@ export default function AllInOnePage() {
   });
 
   const uploadMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
-      const response = await fetch('/api/documents/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-      return response.json();
-    },
-    onSuccess: async (data) => {
-      toast({
-        title: "Document uploaded successfully",
-        description: "Analyzing document and generating recommendations...",
-      });
+    mutationFn: async (filesData: { files: File[], description?: string }) => {
+      const results = [];
+      const totalFiles = filesData.files.length;
       
-      setTimeout(async () => {
+      for (let i = 0; i < filesData.files.length; i++) {
+        const file = filesData.files[i];
+        const formData = new FormData();
+        formData.append('file', file);
+        if (filesData.description) {
+          formData.append('description', filesData.description);
+        }
+
+        // Update progress
+        const progressKey = file.name;
+        setUploadProgress(prev => ({ ...prev, [progressKey]: 0 }));
+
         try {
-          const [analysis, recs] = await Promise.all([
-            api.getAnalysesByDocument(data.document.id),
-            api.getRecommendations()
-          ]);
-          
-          setAnalysisResult({
-            document: data.document,
-            analysis: analysis[0],
-            recommendations: recs.slice(0, 5)
+          const response = await fetch('/api/documents/upload', {
+            method: 'POST',
+            body: formData,
           });
-
-          queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
-          queryClient.invalidateQueries({ queryKey: ["/api/recommendations"] });
-          queryClient.invalidateQueries({ queryKey: ["/api/analyses"] });
-          queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
-
+          
+          if (!response.ok) {
+            throw new Error(`Failed to upload ${file.name}: ${await response.text()}`);
+          }
+          
+          const result = await response.json();
+          results.push(result);
+          
+          // Update progress to completed
+          setUploadProgress(prev => ({ ...prev, [progressKey]: 100 }));
+          
           toast({
-            title: "Analysis complete!",
-            description: "Your document has been analyzed and recommendations generated.",
+            title: `File ${i + 1}/${totalFiles} uploaded`,
+            description: `${file.name} uploaded successfully`,
           });
         } catch (error) {
-          console.error('Analysis error:', error);
+          console.error(`Upload failed for ${file.name}:`, error);
+          setUploadProgress(prev => ({ ...prev, [progressKey]: -1 })); // Mark as failed
           toast({
-            title: "Analysis completed",
-            description: "Document uploaded successfully. Check your library for details.",
-            variant: "default",
+            title: "Upload failed",
+            description: `Failed to upload ${file.name}`,
+            variant: "destructive",
           });
         }
-      }, 2000);
+      }
+      
+      return { results, totalUploaded: results.length };
+    },
+    onSuccess: async (data) => {
+      const { results, totalUploaded } = data;
+      
+      toast({
+        title: `${totalUploaded} documents uploaded`,
+        description: "Analyzing documents and generating recommendations...",
+      });
+      
+      // Clear files and reset progress after a delay
+      setTimeout(() => {
+        setFiles([]);
+        setUploadProgress({});
+      }, 3000);
+      
+      // Show analysis result for the last uploaded document
+      if (results.length > 0) {
+        const lastResult = results[results.length - 1];
+        setTimeout(async () => {
+          try {
+            const [analysis, recs] = await Promise.all([
+              api.getAnalysesByDocument(lastResult.document.id),
+              api.getRecommendations()
+            ]);
+            
+            setAnalysisResult({
+              document: lastResult.document,
+              analysis: analysis[0],
+              recommendations: recs.slice(0, 5)
+            });
+
+            queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/recommendations"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/analyses"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+
+            toast({
+              title: "Analysis complete!",
+              description: `${totalUploaded} documents analyzed and recommendations generated.`,
+            });
+          } catch (error) {
+            console.error('Analysis error:', error);
+            toast({
+              title: "Analysis completed",
+              description: `${totalUploaded} documents uploaded successfully. Check your library for details.`,
+              variant: "default",
+            });
+          }
+        }, 2000);
+      }
     },
     onError: (error) => {
       toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload document",
+        title: "Batch upload failed",
+        description: error.message || "Failed to upload documents",
         variant: "destructive",
       });
+      setUploadProgress({});
     },
   });
 
@@ -126,25 +179,26 @@ export default function AllInOnePage() {
     },
   });
 
-  const handleFileSelect = (selectedFile: File) => {
-    setFile(selectedFile);
+  const handleFileSelect = (selectedFiles: File[]) => {
+    setFiles(selectedFiles);
     
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    if (description) {
-      formData.append('description', description);
-    }
-    
-    uploadMutation.mutate(formData);
+    uploadMutation.mutate({
+      files: selectedFiles,
+      description: description || undefined
+    });
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
     
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      handleFileSelect(files[0]);
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length > 0) {
+      handleFileSelect(droppedFiles);
     }
   }, []);
 
@@ -252,12 +306,53 @@ export default function AllInOnePage() {
                     <Label htmlFor="description">Description (Optional)</Label>
                     <Textarea
                       id="description"
-                      placeholder="Describe the document or problem you're uploading..."
+                      placeholder="Describe the documents or problem you're uploading..."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={3}
                     />
                   </div>
+
+                  {/* File Preview Section */}
+                  {files.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Selected Files ({files.length})</Label>
+                      <div className="max-h-32 overflow-y-auto space-y-1">
+                        {files.map((file, index) => (
+                          <div key={`${file.name}-${index}`} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                              <span className="truncate">{file.name}</span>
+                              <span className="text-gray-500 flex-shrink-0">({(file.size / 1024 / 1024).toFixed(1)}MB)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {uploadProgress[file.name] !== undefined && (
+                                <div className="flex items-center gap-1">
+                                  {uploadProgress[file.name] === 100 ? (
+                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                  ) : uploadProgress[file.name] === -1 ? (
+                                    <AlertCircle className="h-4 w-4 text-red-500" />
+                                  ) : (
+                                    <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                                  )}
+                                </div>
+                              )}
+                              {!uploadMutation.isPending && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeFile(index)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div
                     className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer
@@ -271,10 +366,11 @@ export default function AllInOnePage() {
                     <input
                       id="file-input"
                       type="file"
+                      multiple
                       className="hidden"
                       onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileSelect(file);
+                        const selectedFiles = Array.from(e.target.files || []);
+                        if (selectedFiles.length > 0) handleFileSelect(selectedFiles);
                       }}
                       accept=".pdf,.docx,.doc,.txt,.xlsx,.xls,.csv,.json,.xml,.rtf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.html,.htm,.md,.log"
                     />
@@ -288,10 +384,10 @@ export default function AllInOnePage() {
                       <div className="flex flex-col items-center gap-2">
                         <Upload className="h-8 w-8 text-gray-400" />
                         <p className="text-sm text-gray-600 dark:text-gray-300">
-                          Drop files here or click to upload
+                          Drop multiple files here or click to upload
                         </p>
                         <p className="text-xs text-gray-500">
-                          Supports PDF, DOCX, TXT, images, and more
+                          Supports PDF, DOCX, TXT, images, and more • Multiple files supported
                         </p>
                       </div>
                     )}
