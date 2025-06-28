@@ -1,13 +1,16 @@
 import { 
   documents, 
   recommendations, 
-  aiAnalyses, 
+  aiAnalyses,
+  adminSessions,
   type Document, 
   type InsertDocument, 
   type Recommendation, 
   type InsertRecommendation, 
   type AiAnalysis, 
-  type InsertAiAnalysis 
+  type InsertAiAnalysis,
+  type AdminSession,
+  type InsertAdminSession
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, like, or, desc, asc } from "drizzle-orm";
@@ -51,6 +54,11 @@ export interface IStorage {
     swpppCount: number;
     erosionCount: number;
   }>;
+
+  // Admin Authentication
+  verifyAdmin(email: string): Promise<boolean>;
+  createAdminSession(email: string): Promise<string>;
+  validateAdminToken(token: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -215,6 +223,22 @@ export class MemStorage implements IStorage {
       swpppCount: recommendations.filter(r => r.category === 'swppp').length,
       erosionCount: recommendations.filter(r => r.category === 'erosion').length,
     };
+  }
+
+  // Admin Authentication - only allow Daniel Guzman
+  async verifyAdmin(email: string): Promise<boolean> {
+    return email === 'guzman.danield@outlook.com';
+  }
+
+  async createAdminSession(email: string): Promise<string> {
+    if (await this.verifyAdmin(email)) {
+      return 'admin-session-' + Date.now();
+    }
+    throw new Error('Unauthorized');
+  }
+
+  async validateAdminToken(token: string): Promise<boolean> {
+    return token.startsWith('admin-session-');
   }
 }
 
@@ -390,6 +414,44 @@ export class DatabaseStorage implements IStorage {
       swpppCount,
       erosionCount
     };
+  }
+
+  // Admin Authentication - only allow Daniel Guzman
+  async verifyAdmin(email: string): Promise<boolean> {
+    return email === 'guzman.danield@outlook.com';
+  }
+
+  async createAdminSession(email: string): Promise<string> {
+    if (await this.verifyAdmin(email)) {
+      const sessionToken = 'admin-session-' + Date.now() + '-' + Math.random().toString(36);
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      
+      await db.insert(adminSessions).values({
+        email,
+        isAuthenticated: true,
+        sessionToken,
+        expiresAt
+      });
+      
+      return sessionToken;
+    }
+    throw new Error('Unauthorized');
+  }
+
+  async validateAdminToken(token: string): Promise<boolean> {
+    const [session] = await db.select()
+      .from(adminSessions)
+      .where(eq(adminSessions.sessionToken, token));
+    
+    if (!session || !session.isAuthenticated) {
+      return false;
+    }
+    
+    if (session.expiresAt && session.expiresAt < new Date()) {
+      return false;
+    }
+    
+    return true;
   }
 }
 

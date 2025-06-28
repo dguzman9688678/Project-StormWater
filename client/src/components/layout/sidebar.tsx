@@ -8,7 +8,8 @@ import {
   FileText, 
   Brain,
   Menu,
-  X
+  X,
+  Lock
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -22,6 +23,7 @@ const navigation = [
   { name: 'Erosion Control', href: '/erosion-control', icon: Mountain },
   { name: 'Reference Documents', href: '/documents', icon: FileText },
   { name: 'AI Analysis', href: '/ai-analysis', icon: Brain },
+  { name: 'Administration', href: '/admin', icon: Lock },
 ];
 
 export function Sidebar() {

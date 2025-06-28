@@ -14,6 +14,7 @@ import SWPPPPage from "@/pages/swppp";
 import ErosionControlPage from "@/pages/erosion-control";
 import DocumentsPage from "@/pages/documents";
 import AIAnalysisPage from "@/pages/ai-analysis";
+import { AdminPage } from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -26,6 +27,7 @@ function Router() {
         <Route path="/erosion-control" component={ErosionControlPage} />
         <Route path="/documents" component={DocumentsPage} />
         <Route path="/ai-analysis" component={AIAnalysisPage} />
+        <Route path="/admin" component={AdminPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

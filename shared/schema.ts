@@ -34,6 +34,15 @@ export const aiAnalyses = pgTable("ai_analyses", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const adminSessions = pgTable("admin_sessions", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  isAuthenticated: boolean("is_authenticated").default(false),
+  sessionToken: text("session_token"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertDocumentSchema = createInsertSchema(documents).omit({
   id: true,
   uploadedAt: true,
@@ -49,9 +58,16 @@ export const insertAiAnalysisSchema = createInsertSchema(aiAnalyses).omit({
   createdAt: true,
 });
 
+export const insertAdminSessionSchema = createInsertSchema(adminSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type Document = typeof documents.$inferSelect;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type Recommendation = typeof recommendations.$inferSelect;
 export type InsertRecommendation = z.infer<typeof insertRecommendationSchema>;
 export type AiAnalysis = typeof aiAnalyses.$inferSelect;
 export type InsertAiAnalysis = z.infer<typeof insertAiAnalysisSchema>;
+export type AdminSession = typeof adminSessions.$inferSelect;
+export type InsertAdminSession = z.infer<typeof insertAdminSessionSchema>;

@@ -514,6 +514,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin Authentication Routes
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      // Only allow Daniel Guzman
+      if (email !== 'guzman.danield@outlook.com') {
+        return res.status(401).json({ error: "Unauthorized access" });
+      }
+
+      const token = await storage.createAdminSession(email);
+      res.json({ success: true, token, message: "Admin authenticated successfully" });
+    } catch (error) {
+      console.error('Admin login error:', error);
+      res.status(401).json({ error: "Authentication failed" });
+    }
+  });
+
+  // Verify admin token
+  app.get("/api/admin/verify", async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!token) {
+        return res.status(401).json({ error: "No token provided" });
+      }
+
+      const isValid = await storage.validateAdminToken(token);
+      
+      if (isValid) {
+        res.json({ success: true, message: "Valid admin session" });
+      } else {
+        res.status(401).json({ error: "Invalid or expired token" });
+      }
+    } catch (error) {
+      console.error('Admin verify error:', error);
+      res.status(401).json({ error: "Token validation failed" });
+    }
+  });
+
+  // Admin middleware function
+  const requireAdmin = async (req: any, res: any, next: any) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!token) {
+        return res.status(401).json({ error: "Admin access required" });
+      }
+
+      const isValid = await storage.validateAdminToken(token);
+      
+      if (!isValid) {
+        return res.status(401).json({ error: "Invalid admin credentials" });
+      }
+
+      next();
+    } catch (error) {
+      res.status(401).json({ error: "Admin authentication failed" });
+    }
+  };
+
   const httpServer = createServer(app);
   return httpServer;
 }
