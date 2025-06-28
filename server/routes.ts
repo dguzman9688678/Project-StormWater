@@ -229,6 +229,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Upload multiple files for analysis (temporary - not saved to library)
+  app.post("/api/documents/upload-analyze", upload.array('files'), async (req, res) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({ error: "No files uploaded" });
+      }
+
+      const { description } = req.body;
+      
+      // Process first file for analysis
+      const primaryFile = files[0];
+      
+      // Validate file
+      const isValid = await documentProcessor.validateFile(primaryFile.path);
+      if (!isValid) {
+        return res.status(400).json({ error: "File is too large or invalid" });
+      }
+
+      // Process document
+      const processed = await documentProcessor.processDocument(
+        primaryFile.path, 
+        primaryFile.originalname
+      );
+
+      // Create temporary document for analysis (not saved to library)
+      const tempDocument = {
+        id: Date.now(), // temporary ID
+        title: processed.title,
+        content: processed.content,
+        contentType: processed.contentType,
+        category: "stormwater",
+        subcategory: "analysis",
+        originalName: primaryFile.originalname,
+        fileSize: primaryFile.size,
+        uploadedAt: new Date(),
+        isBookmarked: false
+      };
+
+      // Perform AI analysis
+      const allDocuments = await storage.getAllDocuments();
+      const analysisResult = await aiAnalyzer.analyzeDocument(tempDocument, description);
+
+      // Create temporary analysis result
+      const tempAnalysis = {
+        id: Date.now(),
+        documentId: tempDocument.id,
+        query: description || "Document analysis",
+        analysis: analysisResult.analysis,
+        insights: analysisResult.insights,
+        recommendations: analysisResult.recommendations,
+        createdAt: new Date()
+      };
+
+      res.json({
+        document: tempDocument,
+        analysis: tempAnalysis,
+        recommendations: analysisResult.recommendations
+      });
+
+    } catch (error) {
+      console.error('Analysis error:', error);
+      res.status(500).json({ error: "Failed to analyze documents" });
+    }
+  });
+
   // Get recommendations
   app.get("/api/recommendations", async (req, res) => {
     try {
