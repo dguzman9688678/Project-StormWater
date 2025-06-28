@@ -89,13 +89,13 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   };
 
   const handleFileSelect = (selectedFile: File) => {
-    const allowedTypes = ['.pdf', '.docx', '.txt'];
+    const allowedTypes = ['.pdf', '.docx', '.doc', '.txt', '.xlsx', '.xls', '.csv', '.json', '.xml', '.rtf'];
     const fileExtension = '.' + selectedFile.name.split('.').pop()?.toLowerCase();
     
     if (!allowedTypes.includes(fileExtension)) {
       toast({
         title: "Invalid file type",
-        description: "Please upload a PDF, DOCX, or TXT file.",
+        description: "Please upload a supported document format (PDF, DOCX, TXT, Excel, CSV, JSON, XML, RTF).",
         variant: "destructive",
       });
       return;

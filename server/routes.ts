@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import { DocumentProcessor } from "./services/document-processor";
 import { AIAnalyzer } from "./services/ai-analyzer";
 import { RecommendationGenerator } from "./services/recommendation-generator";
+import { DocumentExporter } from "./services/document-exporter";
 import { insertDocumentSchema, insertAiAnalysisSchema } from "@shared/schema";
 
 const upload = multer({ 
@@ -16,6 +17,7 @@ const upload = multer({
 const documentProcessor = new DocumentProcessor();
 const aiAnalyzer = new AIAnalyzer();
 const recommendationGenerator = new RecommendationGenerator();
+const documentExporter = new DocumentExporter();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize with template recommendations
@@ -202,6 +204,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(results);
     } catch (error) {
       res.status(500).json({ error: "Search failed" });
+    }
+  });
+
+  // Download document in various formats
+  app.get("/api/documents/:id/download", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { format = 'txt', includeRecommendations = 'false', includeAnalyses = 'false' } = req.query;
+      
+      const documentId = parseInt(id);
+      if (isNaN(documentId)) {
+        return res.status(400).json({ error: "Invalid document ID" });
+      }
+
+      const document = await storage.getDocument(documentId);
+      if (!document) {
+        return res.status(404).json({ error: "Document not found" });
+      }
+
+      // Get related data if requested
+      let recommendations = undefined;
+      let analyses = undefined;
+
+      if (includeRecommendations === 'true') {
+        const allRecommendations = await storage.getAllRecommendations();
+        recommendations = allRecommendations.filter(rec => 
+          rec.sourceDocumentId === documentId || rec.category === document.category
+        );
+      }
+
+      if (includeAnalyses === 'true') {
+        analyses = await storage.getAnalysesByDocument(documentId);
+      }
+
+      // Export document
+      const buffer = await documentExporter.exportDocument(
+        document,
+        format as string,
+        recommendations,
+        analyses
+      );
+
+      // Set appropriate headers
+      const mimeTypes: Record<string, string> = {
+        txt: 'text/plain',
+        csv: 'text/csv',
+        xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        json: 'application/json',
+        zip: 'application/zip'
+      };
+
+      const extensions: Record<string, string> = {
+        txt: 'txt',
+        csv: 'csv',
+        xlsx: 'xlsx',
+        json: 'json',
+        zip: 'zip'
+      };
+
+      const mimeType = mimeTypes[format as string] || 'application/octet-stream';
+      const extension = extensions[format as string] || 'bin';
+      const filename = `${document.originalName.replace(/\.[^/.]+$/, '')}.${extension}`;
+
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+
+    } catch (error) {
+      console.error('Download error:', error);
+      res.status(500).json({ error: "Failed to download document" });
     }
   });
 

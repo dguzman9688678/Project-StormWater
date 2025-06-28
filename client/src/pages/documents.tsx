@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Download, Eye, Trash2, Filter } from "lucide-react";
+import { FileText, Download, Eye, Trash2, Filter, MoreHorizontal } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { api } from "@/lib/api";
 
 export default function DocumentsPage() {
@@ -37,6 +38,17 @@ export default function DocumentsPage() {
       case 'regulatory': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
+  };
+
+  const handleDownload = (documentId: number, format: string, includeRecommendations = false, includeAnalyses = false) => {
+    const params = new URLSearchParams({
+      format,
+      includeRecommendations: includeRecommendations.toString(),
+      includeAnalyses: includeAnalyses.toString()
+    });
+    
+    const downloadUrl = `/api/documents/${documentId}/download?${params.toString()}`;
+    window.open(downloadUrl, '_blank');
   };
 
   return (
@@ -122,9 +134,39 @@ export default function DocumentsPage() {
                     <Eye className="h-3 w-3 mr-1" />
                     View
                   </Button>
-                  <Button variant="outline" size="sm">
-                    <Download className="h-3 w-3" />
-                  </Button>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Download className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleDownload(document.id, 'txt')}>
+                        Download as TXT
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownload(document.id, 'csv')}>
+                        Download as CSV
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownload(document.id, 'xlsx')}>
+                        Download as Excel
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownload(document.id, 'json')}>
+                        Download as JSON
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleDownload(document.id, 'txt', true, true)}>
+                        Download with Analysis (TXT)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownload(document.id, 'xlsx', true, true)}>
+                        Download with Analysis (Excel)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownload(document.id, 'zip', true, true)}>
+                        Download All Formats (ZIP)
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
                   <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
                     <Trash2 className="h-3 w-3" />
                   </Button>
