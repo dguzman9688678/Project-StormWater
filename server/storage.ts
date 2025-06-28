@@ -9,6 +9,8 @@ import {
   type AiAnalysis, 
   type InsertAiAnalysis 
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, like, or, desc, asc } from "drizzle-orm";
 
 export interface IStorage {
   // Documents
@@ -216,4 +218,172 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getDocument(id: number): Promise<Document | undefined> {
+    const [document] = await db.select().from(documents).where(eq(documents.id, id));
+    return document || undefined;
+  }
+
+  async getAllDocuments(): Promise<Document[]> {
+    return await db.select().from(documents).orderBy(desc(documents.uploadedAt));
+  }
+
+  async getDocumentsByCategory(category: string): Promise<Document[]> {
+    return await db.select().from(documents)
+      .where(eq(documents.category, category))
+      .orderBy(desc(documents.uploadedAt));
+  }
+
+  async createDocument(doc: InsertDocument): Promise<Document> {
+    const [document] = await db
+      .insert(documents)
+      .values({
+        ...doc,
+        description: doc.description || null
+      })
+      .returning();
+    return document;
+  }
+
+  async deleteDocument(id: number): Promise<void> {
+    await db.delete(documents).where(eq(documents.id, id));
+  }
+
+  async getRecommendation(id: number): Promise<Recommendation | undefined> {
+    const [recommendation] = await db.select().from(recommendations).where(eq(recommendations.id, id));
+    return recommendation || undefined;
+  }
+
+  async getAllRecommendations(): Promise<Recommendation[]> {
+    return await db.select().from(recommendations).orderBy(desc(recommendations.createdAt));
+  }
+
+  async getRecommendationsByCategory(category: string): Promise<Recommendation[]> {
+    return await db.select().from(recommendations)
+      .where(eq(recommendations.category, category))
+      .orderBy(desc(recommendations.createdAt));
+  }
+
+  async getRecentRecommendations(limit: number): Promise<Recommendation[]> {
+    return await db.select().from(recommendations)
+      .orderBy(desc(recommendations.createdAt))
+      .limit(limit);
+  }
+
+  async searchRecommendations(query: string): Promise<Recommendation[]> {
+    return await db.select().from(recommendations)
+      .where(or(
+        like(recommendations.title, `%${query}%`),
+        like(recommendations.content, `%${query}%`),
+        like(recommendations.citation, `%${query}%`)
+      ))
+      .orderBy(desc(recommendations.createdAt));
+  }
+
+  async createRecommendation(rec: InsertRecommendation): Promise<Recommendation> {
+    const [recommendation] = await db
+      .insert(recommendations)
+      .values({
+        ...rec,
+        subcategory: rec.subcategory || null,
+        sourceDocumentId: rec.sourceDocumentId || null,
+        citation: rec.citation || null,
+        isBookmarked: rec.isBookmarked || null
+      })
+      .returning();
+    return recommendation;
+  }
+
+  async toggleBookmark(id: number): Promise<void> {
+    const [recommendation] = await db.select().from(recommendations).where(eq(recommendations.id, id));
+    if (recommendation) {
+      await db.update(recommendations)
+        .set({ isBookmarked: !recommendation.isBookmarked })
+        .where(eq(recommendations.id, id));
+    }
+  }
+
+  async getAiAnalysis(id: number): Promise<AiAnalysis | undefined> {
+    const [analysis] = await db.select().from(aiAnalyses).where(eq(aiAnalyses.id, id));
+    return analysis || undefined;
+  }
+
+  async getAnalysesByDocument(documentId: number): Promise<AiAnalysis[]> {
+    return await db.select().from(aiAnalyses)
+      .where(eq(aiAnalyses.documentId, documentId))
+      .orderBy(desc(aiAnalyses.createdAt));
+  }
+
+  async getAllAiAnalyses(): Promise<AiAnalysis[]> {
+    return await db.select().from(aiAnalyses).orderBy(desc(aiAnalyses.createdAt));
+  }
+
+  async createAiAnalysis(analysis: InsertAiAnalysis): Promise<AiAnalysis> {
+    const [aiAnalysis] = await db
+      .insert(aiAnalyses)
+      .values(analysis)
+      .returning();
+    return aiAnalysis;
+  }
+
+  async globalSearch(query: string): Promise<{
+    documents: Document[];
+    recommendations: Recommendation[];
+    analyses: AiAnalysis[];
+  }> {
+    const [documentsResult, recommendationsResult, analysesResult] = await Promise.all([
+      db.select().from(documents)
+        .where(or(
+          like(documents.originalName, `%${query}%`),
+          like(documents.content, `%${query}%`),
+          like(documents.description, `%${query}%`)
+        ))
+        .orderBy(desc(documents.uploadedAt)),
+      
+      this.searchRecommendations(query),
+      
+      db.select().from(aiAnalyses)
+        .where(or(
+          like(aiAnalyses.query, `%${query}%`),
+          like(aiAnalyses.analysis, `%${query}%`)
+        ))
+        .orderBy(desc(aiAnalyses.createdAt))
+    ]);
+
+    return {
+      documents: documentsResult,
+      recommendations: recommendationsResult,
+      analyses: analysesResult
+    };
+  }
+
+  async getStats(): Promise<{
+    documentCount: number;
+    recommendationCount: number;
+    analysisCount: number;
+    qsdCount: number;
+    swpppCount: number;
+    erosionCount: number;
+  }> {
+    const [allDocs, allRecs, allAnalyses] = await Promise.all([
+      db.select().from(documents),
+      db.select().from(recommendations),
+      db.select().from(aiAnalyses)
+    ]);
+
+    const qsdCount = allRecs.filter(rec => rec.category === 'qsd').length;
+    const swpppCount = allRecs.filter(rec => rec.category === 'swppp').length;
+    const erosionCount = allRecs.filter(rec => rec.category === 'erosion').length;
+
+    return {
+      documentCount: allDocs.length,
+      recommendationCount: allRecs.length,
+      analysisCount: allAnalyses.length,
+      qsdCount,
+      swpppCount,
+      erosionCount
+    };
+  }
+}
+
+export const storage = new DatabaseStorage();

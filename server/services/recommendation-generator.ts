@@ -20,6 +20,11 @@ export class RecommendationGenerator {
   }
 
   async generateTemplateRecommendations(): Promise<void> {
+    // Check if recommendations already exist to avoid duplicates
+    const existingRecs = await storage.getAllRecommendations();
+    if (existingRecs.length > 0) {
+      return; // Already seeded
+    }
     // Generate some template recommendations to demonstrate the system
     const templates: InsertRecommendation[] = [
       {
