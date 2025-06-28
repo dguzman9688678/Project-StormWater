@@ -97,6 +97,7 @@ This is a comprehensive AI-powered stormwater solution system that automatically
 
 ## Changelog
 
+- June 28, 2025 - Production Deployment Updates: Updated all Claude AI model references from 'claude-sonnet-4-20250514' to 'claude-3-5-sonnet-20241022' for optimal performance. Fixed all TypeScript errors in frontend components for deployment readiness. Verified database connections and schema integrity. Updated browserslist data and ensured all dependencies are current. Application fully optimized for Replit deployment.
 - June 28, 2025. Initial setup
 
 ## User Preferences

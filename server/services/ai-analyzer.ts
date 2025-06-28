@@ -86,7 +86,7 @@ RECOMMENDATIONS:
 STORMWATER: [Title] - [Detailed recommendation with specific document references, calculations, and regulatory citations]`;
 
     const response = await this.anthropic!.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 4000,
       system: `You are Claude, a specialized stormwater engineering AI with access to a comprehensive reference library. Always cite specific documents, sections, and standards from the provided library when making recommendations.`,
       messages: [
@@ -136,7 +136,7 @@ RECOMMENDATIONS:
 STORMWATER: [Title] - [Detailed recommendation with engineering specifications]`;
 
       const response = await this.anthropic!.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 4000,
         system: `You are Claude, acting as a certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control). You are conducting professional site assessments with the expertise and authority of a licensed stormwater consultant. Provide professional-grade recommendations with implementation specifications, regulatory compliance guidance, and cost-effective solutions.`,
         messages: [
@@ -192,7 +192,7 @@ PROFESSIONAL RECOMMENDATIONS:
 QSD/CPESC RECOMMENDATION: [Professional BMP Title] - [Detailed implementation specifications with materials, installation standards, inspection requirements, regulatory compliance notes, and professional liability considerations]`;
 
     const response = await this.anthropic!.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 4000,
       system: `You are Claude, acting as a certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control) with extensive field experience in stormwater management. You provide professional-grade analysis and recommendations with the authority and expertise of a licensed consultant.
 
@@ -240,7 +240,7 @@ Content Preview: ${preview}${doc.content.length > 500 ? '...' : ''}
     const prompt = this.buildAnalysisPrompt(document, query);
     
     const response = await this.anthropic!.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 4000,
       system: `You are Claude, a specialized stormwater engineering AI with deep expertise in QSD certification, SWPPP development, erosion control, construction site stormwater management, and regional regulations. Provide detailed, practical, and actionable engineering recommendations based on uploaded documents.`,
       messages: [
@@ -404,7 +404,7 @@ STORMWATER: [Title] - [Detailed recommendation with calculations and costs]`;
 
     try {
       const response = await this.anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 4000,
         system: `You are a specialized stormwater engineering document generator. Create professional engineering documents with technical specifications, calculations, and regulatory compliance information.`,
         messages: [
