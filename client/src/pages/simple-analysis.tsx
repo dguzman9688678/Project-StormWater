@@ -94,7 +94,7 @@ export default function SimpleAnalysisPage() {
 
     if (analysisMode === 'all') {
       comprehensiveAnalysisMutation.mutate(question);
-    } else {
+    } else if (selectedDocumentId) {
       singleAnalysisMutation.mutate({
         documentId: selectedDocumentId,
         query: question,
