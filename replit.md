@@ -1,4 +1,4 @@
-# Smart Stormwater Solution Generator
+# Stormwater AI
 
 ## Overview
 
