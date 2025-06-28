@@ -1214,66 +1214,120 @@ End of Report\\par
                 </CardContent>
               </Card>
 
-              {/* Instant Results */}
+              {/* Document Preview and Analysis Results */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Brain className="h-5 w-5" />
-                    Instant Analysis Results
+                    Document Preview & Analysis Results
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {analysisResult ? (
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-semibold text-green-600 dark:text-green-400 flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4" />
-                          Analysis Complete
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                          Document: {analysisResult.document.originalName}
-                        </p>
-                      </div>
-
-                      {analysisResult.analysis && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Document Preview Section */}
+                      <div className="space-y-4">
                         <div>
-                          <h4 className="font-medium mb-2">AI Analysis</h4>
-                          <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-3 rounded">
-                            {analysisResult.analysis.analysis}
-                          </p>
-                        </div>
-                      )}
-
-                      {analysisResult.recommendations.length > 0 && (
-                        <div>
-                          <h4 className="font-medium mb-2">Key Recommendations</h4>
-                          <div className="space-y-2">
-                            {analysisResult.recommendations.slice(0, 3).map((rec: any, index: number) => (
-                              <div key={rec.id || `rec-preview-${index}`} className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border-l-4 border-blue-500">
-                                <div className="font-medium text-sm">{rec.title}</div>
-                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                  {rec.content.substring(0, 150)}...
+                          <h3 className="font-semibold text-green-600 dark:text-green-400 flex items-center gap-2 mb-3">
+                            <CheckCircle className="h-4 w-4" />
+                            Uploaded Document
+                          </h3>
+                          
+                          {/* Document Info */}
+                          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                            <div className="flex items-center gap-3 mb-3">
+                              <FileText className="h-8 w-8 text-blue-500" />
+                              <div>
+                                <p className="font-medium">{analysisResult.document.originalName}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {analysisResult.document.fileSize ? `${(analysisResult.document.fileSize / 1024 / 1024).toFixed(1)}MB` : ''} • 
+                                  {analysisResult.document.category || 'Stormwater'}
                                 </p>
-                                <div className="mt-2 space-y-1">
-                                  <Badge variant="outline" className="text-xs">
-                                    {rec.subcategory || rec.category || 'General'}
-                                  </Badge>
-                                  {rec.citation && (
-                                    <div className="text-xs text-green-600 dark:text-green-400 font-medium">
-                                      📚 {rec.citation.substring(0, 50)}...
-                                    </div>
-                                  )}
-                                </div>
                               </div>
-                            ))}
+                            </div>
+                            
+                            {/* Image Preview */}
+                            {analysisResult.document.imageData && (
+                              <div className="mb-3">
+                                <img 
+                                  src={`data:image/jpeg;base64,${analysisResult.document.imageData}`}
+                                  alt={analysisResult.document.originalName}
+                                  className="w-full max-h-64 object-contain rounded border"
+                                />
+                              </div>
+                            )}
+                            
+                            {/* Document Description */}
+                            {analysisResult.document.description && (
+                              <div className="mb-3">
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Your Description:</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                                  {analysisResult.document.description}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {/* Content Preview */}
+                            {analysisResult.document.content && (
+                              <div>
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Content Preview:</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900 p-2 rounded border max-h-32 overflow-y-auto">
+                                  {analysisResult.document.content.substring(0, 300)}...
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      )}
+                      </div>
+
+                      {/* AI Analysis and Recommendations */}
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                          <Brain className="h-4 w-4" />
+                          QSD/CPESC Professional Analysis
+                        </h3>
+
+                        {analysisResult.analysis && (
+                          <div>
+                            <h4 className="font-medium mb-2">Professional Assessment</h4>
+                            <div className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-3 rounded max-h-40 overflow-y-auto">
+                              {analysisResult.analysis.analysis}
+                            </div>
+                          </div>
+                        )}
+
+                        {analysisResult.recommendations && analysisResult.recommendations.length > 0 && (
+                          <div>
+                            <h4 className="font-medium mb-2">Professional Recommendations ({analysisResult.recommendations.length})</h4>
+                            <div className="space-y-3 max-h-80 overflow-y-auto">
+                              {analysisResult.recommendations.map((rec: any, index: number) => (
+                                <div key={rec.id || `rec-preview-${index}`} className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border-l-4 border-blue-500">
+                                  <div className="font-medium text-sm text-blue-900 dark:text-blue-100">{rec.title}</div>
+                                  <p className="text-xs text-gray-700 dark:text-gray-300 mt-1 line-clamp-3">
+                                    {rec.content}
+                                  </p>
+                                  <div className="mt-2 flex flex-wrap gap-1">
+                                    <Badge variant="outline" className="text-xs">
+                                      {rec.subcategory || rec.category || 'General'}
+                                    </Badge>
+                                    {rec.citation && (
+                                      <Badge variant="secondary" className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                                        📚 Source Available
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                      <Brain className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>Upload a document to see instant analysis results</p>
+                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                      <Brain className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg font-medium mb-2">Upload a document to see preview and analysis</p>
+                      <p className="text-sm">Get professional QSD/CPESC recommendations with visual preview</p>
                     </div>
                   )}
                 </CardContent>

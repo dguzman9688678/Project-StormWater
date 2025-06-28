@@ -117,7 +117,7 @@ STORMWATER: [Title] - [Detailed recommendation with specific document references
 - Site Description: ${document.content}
 
 **Analysis Instructions:**
-Based on the filename "${document.originalName}" and any site description provided, perform a comprehensive stormwater engineering analysis. This appears to be a construction site photo that requires professional stormwater management assessment.
+Based on the filename "${document.originalName}"${document.description ? ` and the provided site description: "${document.description}"` : ''}, perform a comprehensive stormwater engineering analysis. This appears to be a construction site photo that requires professional stormwater management assessment.
 
 **Analysis Required:**
 1. **Site Assessment**: Based on the image name and context, identify likely site conditions
@@ -167,6 +167,7 @@ ${referenceContext}
 **CURRENT DOCUMENT TO ANALYZE:**
 - Title: ${document.originalName}
 - Category: ${document.category}
+${document.description ? `- User Description: ${document.description}` : ''}
 - Content: ${document.content.substring(0, 3000)}${document.content.length > 3000 ? '...' : ''}
 
 **PROFESSIONAL QSD/CPESC ASSESSMENT PROTOCOL:**
