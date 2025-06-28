@@ -1,3 +1,4 @@
+import Anthropic from '@anthropic-ai/sdk';
 import { type Document, type InsertAiAnalysis } from "@shared/schema";
 
 export interface AnalysisResult {
@@ -13,52 +14,51 @@ export interface AnalysisResult {
 }
 
 export class AIAnalyzer {
-  private apiKey: string;
+  private anthropic: Anthropic | null = null;
+  private hasApiKey: boolean;
 
   constructor() {
-    this.apiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || '';
-    if (!this.apiKey) {
-      console.warn('OpenAI API key not found. AI analysis will be simulated.');
+    const apiKey = process.env.ANTHROPIC_API_KEY || '';
+    this.hasApiKey = !!apiKey;
+    
+    if (!this.hasApiKey) {
+      console.warn('Anthropic API key not found. AI analysis will be simulated.');
+    } else {
+      this.anthropic = new Anthropic({
+        apiKey: apiKey,
+      });
+      console.log('Anthropic AI (Claude) initialized for stormwater engineering analysis.');
     }
   }
 
   async analyzeDocument(document: Document, query?: string): Promise<AnalysisResult> {
-    if (!this.apiKey) {
+    if (!this.hasApiKey || !this.anthropic) {
       return this.generateFallbackAnalysis(document, query);
     }
 
     try {
       const prompt = this.buildAnalysisPrompt(document, query);
       
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a specialized stormwater engineering AI assistant with expertise in QSD guidelines, SWPPP development, and erosion control practices. Provide detailed, practical recommendations based on engineering documents.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          max_tokens: 2000,
-          temperature: 0.3,
-        }),
+      const response = await this.anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514', // Latest Claude model for best performance
+        max_tokens: 4000,
+        system: `You are Claude, a specialized stormwater engineering AI with deep expertise in:
+- QSD (Qualified SWPPP Developer) certification requirements and guidelines
+- SWPPP (Stormwater Pollution Prevention Plan) development and implementation
+- Erosion and sediment control best practices
+- Construction site stormwater management
+- Regional stormwater regulations and compliance
+
+Provide detailed, practical, and actionable engineering recommendations based on the uploaded documents. Focus on real-world implementation and regulatory compliance.`,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
       });
 
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const analysisText = data.choices[0].message.content;
+      const analysisText = response.content[0].type === 'text' ? response.content[0].text : '';
 
       return this.parseAnalysisResponse(analysisText, document);
     } catch (error) {
@@ -69,20 +69,32 @@ export class AIAnalyzer {
 
   private buildAnalysisPrompt(document: Document, query?: string): string {
     const basePrompt = `
-Analyze the following stormwater engineering document and provide:
+As a specialized stormwater engineering expert, analyze this document and provide practical engineering guidance:
 
-1. A comprehensive analysis of the content
-2. Key insights for stormwater management
-3. Specific actionable recommendations categorized as:
-   - QSD (Qualified SWPPP Developer) guidelines
-   - SWPPP (Stormwater Pollution Prevention Plan) practices  
-   - Erosion control techniques
+**Document Information:**
+- Title: ${document.originalName}
+- Category: ${document.category}
+- Content: ${document.content.substring(0, 4000)}${document.content.length > 4000 ? '...' : ''}
 
-Document Title: ${document.originalName}
-Document Category: ${document.category}
-Document Content: ${document.content.substring(0, 3000)}...
+**Analysis Required:**
+1. **Technical Analysis**: Identify key stormwater engineering concepts, regulations, and requirements
+2. **Engineering Insights**: Extract practical insights for construction site stormwater management
+3. **Actionable Recommendations**: Provide specific, implementable recommendations in these categories:
+   - **QSD Guidelines**: Qualified SWPPP Developer certification and inspection requirements
+   - **SWPPP Practices**: Stormwater Pollution Prevention Plan development and implementation
+   - **Erosion Control**: Best management practices for erosion and sediment control
 
-${query ? `Specific Query: ${query}` : ''}
+**Format your response as:**
+ANALYSIS: [Detailed technical analysis]
+
+INSIGHTS: [Key insights as bullet points]
+
+RECOMMENDATIONS:
+QSD: [Title] - [Detailed recommendation with regulatory citation]
+SWPPP: [Title] - [Detailed recommendation with regulatory citation]  
+EROSION: [Title] - [Detailed recommendation with regulatory citation]
+
+${query ? `\n**Specific Focus**: ${query}` : ''}
 
 Please structure your response with clear sections and provide citations referencing the source document.
 `;
