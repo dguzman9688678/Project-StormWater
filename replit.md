@@ -18,7 +18,7 @@ This is a comprehensive AI-powered stormwater solution system that automatically
 - **Framework**: Express.js with TypeScript
 - **Database**: PostgreSQL with Drizzle ORM for type-safe database operations
 - **File Processing**: Multi-format document processing (PDF, DOCX, TXT)
-- **AI Integration**: OpenAI GPT-4 integration for document analysis
+- **AI Integration**: Anthropic Claude integration for document analysis
 - **API Design**: RESTful API with proper error handling and validation
 
 ### Database Schema
@@ -36,7 +36,7 @@ This is a comprehensive AI-powered stormwater solution system that automatically
 - Temporary file cleanup for security
 
 ### AI Analysis Service
-- OpenAI GPT-4 integration for intelligent document analysis
+- Anthropic Claude integration for intelligent document analysis
 - Specialized prompts for stormwater engineering contexts
 - Fallback analysis when API is unavailable
 - Structured recommendation generation
@@ -57,7 +57,7 @@ This is a comprehensive AI-powered stormwater solution system that automatically
 
 1. **Document Upload**: Users upload engineering documents through drag-and-drop interface
 2. **Content Extraction**: Backend processes files and extracts text content
-3. **AI Analysis**: OpenAI analyzes content and generates engineering recommendations
+3. **AI Analysis**: Anthropic Claude analyzes content and generates engineering recommendations
 4. **Storage**: Documents, analyses, and recommendations stored in PostgreSQL
 5. **Presentation**: Frontend displays organized results with search and filtering capabilities
 
@@ -65,7 +65,7 @@ This is a comprehensive AI-powered stormwater solution system that automatically
 
 ### Required Services
 - **PostgreSQL Database**: Primary data storage (configured via DATABASE_URL)
-- **OpenAI API**: For AI-powered document analysis (OPENAI_API_KEY required)
+- **Anthropic API**: For AI-powered document analysis (ANTHROPIC_API_KEY required)
 
 ### Optional Integrations
 - **NOAA API**: Weather data integration (referenced in attached files but not actively used)
@@ -86,7 +86,7 @@ This is a comprehensive AI-powered stormwater solution system that automatically
 ### Environment Configuration
 - `NODE_ENV`: Environment setting (development/production)
 - `DATABASE_URL`: PostgreSQL connection string (required)
-- `OPENAI_API_KEY`: OpenAI API access (required for AI features)
+- `ANTHROPIC_API_KEY`: Anthropic API access (required for AI features)
 - File upload limits and allowed types configurable
 
 ### Production Considerations
