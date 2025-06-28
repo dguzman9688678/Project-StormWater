@@ -16,7 +16,7 @@ This is a comprehensive AI-powered stormwater solution system that automatically
 
 ### Backend Architecture
 - **Framework**: Express.js with TypeScript
-- **Database**: PostgreSQL with Drizzle ORM for type-safe database operations
+- **Database**: PostgreSQL with Drizzle ORM for type-safe database operations (DatabaseStorage for permanent persistence)
 - **File Processing**: Multi-format document processing (PDF, DOCX, DOC, TXT, XLSX, XLS, CSV, JSON, XML, RTF)
 - **AI Integration**: Anthropic Claude integration for document analysis
 - **API Design**: RESTful API with proper error handling and validation
@@ -120,3 +120,6 @@ This is a comprehensive AI-powered stormwater solution system that automatically
     - "Source Library" (reference documents)
     - "System Overview" (analytics dashboard)
   - **Problem-Type Detection**: Automatically determines document types needed based on keywords (culvert, erosion, pollution, etc.)
+  - **Database Storage**: Switched from MemStorage to DatabaseStorage for permanent document persistence
+  - **AI Service**: Confirmed using Anthropic Claude (not OpenAI) for all AI analysis functionality
+  - **Application Name**: Official name is "Stormwater AI" (not variations or longer names)
