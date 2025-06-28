@@ -161,9 +161,9 @@ export function AdminPage() {
     <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">System Administration</h1>
+          <h1 className="text-3xl font-bold">System Overview</h1>
           <p className="text-muted-foreground mt-2">
-            Administrative control panel for Daniel Guzman
+            Monitor smart solution generation performance and document library analytics
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -204,21 +204,21 @@ export function AdminPage() {
           </CardContent>
         </Card>
 
-        {/* System Statistics */}
+        {/* Solution Generation Analytics */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              System Statistics
+              Solution Generation Analytics
             </CardTitle>
-            <CardDescription>Current system data overview</CardDescription>
+            <CardDescription>Performance metrics for smart solution system</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-blue-600" />
-                  <span>Documents</span>
+                  <span>Source Documents</span>
                 </div>
                 <Badge variant="secondary" className="font-mono">
                   {stats?.documentCount || 0}
@@ -227,7 +227,7 @@ export function AdminPage() {
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Award className="h-4 w-4 text-green-600" />
-                  <span>Recommendations</span>
+                  <span>Generated Solutions</span>
                 </div>
                 <Badge variant="secondary" className="font-mono">
                   {stats?.recommendationCount || 0}
@@ -236,7 +236,7 @@ export function AdminPage() {
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Brain className="h-4 w-4 text-purple-600" />
-                  <span>AI Analyses</span>
+                  <span>Comprehensive Analyses</span>
                 </div>
                 <Badge variant="secondary" className="font-mono">
                   {stats?.analysisCount || 0}

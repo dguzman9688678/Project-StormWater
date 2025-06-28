@@ -17,10 +17,10 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const navigation = [
-  { name: 'Document Analysis', href: '/', icon: Brain },
-  { name: 'Recommendations', href: '/recommendations', icon: Award },
-  { name: 'Reference Documents', href: '/documents', icon: FileText },
-  { name: 'Administration', href: '/admin', icon: Lock },
+  { name: 'Smart Solutions', href: '/', icon: Brain },
+  { name: 'Generated Documents', href: '/recommendations', icon: Award },
+  { name: 'Source Library', href: '/documents', icon: FileText },
+  { name: 'System Overview', href: '/admin', icon: Lock },
 ];
 
 export function Sidebar() {

@@ -204,7 +204,7 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {createFromDescription ? "Create Document from Description" : "Upload Reference Document"}
+            {createFromDescription ? "Add Problem Description" : "Upload Source Document"}
           </DialogTitle>
         </DialogHeader>
 

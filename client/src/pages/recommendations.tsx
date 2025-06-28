@@ -76,19 +76,19 @@ export default function RecommendationsPage() {
 
   const getCategoryTitle = (category: string) => {
     switch (category) {
-      case "qsd": return "Developer Guidelines";
-      case "swppp": return "SWPPP Practices";
-      case "erosion": return "Erosion Control";
-      default: return "All Recommendations";
+      case "qsd": return "Generated Inspection Forms";
+      case "swppp": return "Generated SWPPP Documents";
+      case "erosion": return "Generated Control Plans";
+      default: return "All Generated Documents";
     }
   };
 
   const getCategoryDescription = (category: string) => {
     switch (category) {
-      case "qsd": return "SWPPP development guidelines and best practices";
-      case "swppp": return "Stormwater Pollution Prevention Plan practices and implementation guidance";
-      case "erosion": return "Erosion and sediment control techniques and specifications";
-      default: return "Comprehensive stormwater management recommendations";
+      case "qsd": return "Auto-generated inspection forms, maintenance plans, and safety checklists with citations";
+      case "swppp": return "Generated SWPPP checklists, monitoring protocols, and compliance documents";
+      case "erosion": return "Generated erosion control plans, installation guides, and monitoring procedures";
+      default: return "Comprehensive auto-generated solution documents based on your problem uploads";
     }
   };
 

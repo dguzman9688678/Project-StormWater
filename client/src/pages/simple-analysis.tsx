@@ -123,10 +123,10 @@ export default function SimpleAnalysisPage() {
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
-          Document Analysis
+          Smart Stormwater Solutions
         </h1>
         <p className="text-sm md:text-base text-muted-foreground">
-          Upload any document (e.g., "collapsing culvert") and get comprehensive solutions with auto-generated inspection forms, JSAs, and maintenance plans - all with proper citations from your document library
+          Upload any problem document (e.g., "collapsing culvert") → AI analyzes your entire library → Auto-generates inspection forms, JSAs, maintenance plans with proper citations
         </p>
       </div>
 

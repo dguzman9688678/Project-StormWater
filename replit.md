@@ -1,8 +1,8 @@
-# Stormwater-AI Recommendations System
+# Smart Stormwater Solution Generator
 
 ## Overview
 
-This is a comprehensive stormwater support tool that provides developer, SWPPP, and erosion control recommendations from uploaded reference documents. The system combines AI-powered document analysis with stormwater best practices for management, allowing users to upload and analyze stormwater documents, receive AI-generated recommendations, and access organized guidelines for professional stormwater support.
+This is a comprehensive AI-powered stormwater solution system that automatically generates professional documents based on uploaded problem scenarios. When users upload any problem document (e.g., "collapsing culvert"), the system analyzes the entire document library and auto-generates relevant solution documents including inspection forms, Job Safety Analyses (JSAs), maintenance plans, monitoring protocols, and compliance checklists - all with proper citations from the source library. The system transforms simple problem descriptions into complete actionable solution packages for professional stormwater management.
 
 ## System Architecture
 
@@ -109,11 +109,14 @@ This is a comprehensive stormwater support tool that provides developer, SWPPP, 
 
 ## Recent Development Progress
 
-- **June 28, 2025**: Created comprehensive React/Express dashboard with:
-  - Document upload and processing functionality
-  - AI-powered analysis integration
-  - Categorized recommendations (Developer, SWPPP, Erosion Control)
-  - Global search across documents and recommendations
-  - Template recommendations pre-loaded for demonstration
-  - Professional UI with sidebar navigation and responsive design
-  - Ready for integration with existing Python/FastAPI backend components
+- **June 28, 2025**: Transformed into comprehensive smart solution generation system:
+  - **Complete Workflow Redesign**: Upload problem document → AI analyzes entire library → Auto-generates solution documents
+  - **Smart Document Generation**: Auto-creates inspection forms, JSAs, maintenance plans, monitoring protocols based on problem type
+  - **Comprehensive Analysis**: System references ALL uploaded documents simultaneously for unified solutions
+  - **Citation Integration**: All generated documents include proper citations from source library
+  - **Updated Interface**: Renamed sections to reflect new workflow:
+    - "Smart Solutions" (main analysis page)
+    - "Generated Documents" (auto-created solutions)
+    - "Source Library" (reference documents)
+    - "System Overview" (analytics dashboard)
+  - **Problem-Type Detection**: Automatically determines document types needed based on keywords (culvert, erosion, pollution, etc.)

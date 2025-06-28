@@ -92,10 +92,10 @@ export default function DocumentsPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground flex items-center">
           <FileText className="h-6 w-6 mr-2" />
-          Reference Documents
+          Source Document Library
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Manage and review your uploaded stormwater documents
+          Your reference library that AI analyzes to generate comprehensive solutions and citations
         </p>
       </div>
 
