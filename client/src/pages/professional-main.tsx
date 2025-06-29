@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Upload, FileText, Brain, Download, CheckCircle, AlertCircle, Loader2, Search, BarChart3, Eye, Trash2, Settings, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,11 @@ export default function ProfessionalMainPage() {
   const [sessionFiles, setSessionFiles] = useState<any[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Ensure clean page title
+  useEffect(() => {
+    document.title = "Stormwater AI";
+  }, []);
 
   // System statistics
   const { data: stats } = useQuery({
