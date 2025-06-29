@@ -1557,6 +1557,52 @@ ${docType === 'sop' ? 'Standard Operating Procedure: Include step-by-step proced
     }
   });
 
+  // Download all session files as ZIP (GET endpoint for convenience)
+  app.get("/api/documents/download-session-zip", async (req, res) => {
+    try {
+      // Get recent session files (last 24 hours)
+      const allDocuments = await storage.getAllDocuments();
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const sessionFiles = allDocuments.filter(doc => new Date(doc.uploadedAt) > twentyFourHoursAgo);
+
+      if (sessionFiles.length === 0) {
+        return res.status(404).json({ error: "No session files found" });
+      }
+
+      const archive = archiver('zip', { zlib: { level: 9 } });
+
+      // Set response headers for ZIP download
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `stormwater_session_${timestamp}.zip`;
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+      // Pipe archive to response
+      archive.pipe(res);
+
+      // Add each session file to the archive
+      for (const document of sessionFiles) {
+        try {
+          let filename = document.originalName;
+          if (!filename.includes('.')) {
+            filename += '.txt';
+          }
+          
+          archive.append(document.content, { name: filename });
+        } catch (error) {
+          console.error(`Error adding file ${document.id} to archive:`, error);
+        }
+      }
+
+      // Finalize the archive
+      await archive.finalize();
+
+    } catch (error) {
+      console.error('Session ZIP download error:', error);
+      res.status(500).json({ error: "Failed to create session ZIP file" });
+    }
+  });
+
   // Delete document
   app.delete("/api/documents/:id", async (req, res) => {
     try {

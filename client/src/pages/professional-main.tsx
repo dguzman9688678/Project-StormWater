@@ -261,7 +261,21 @@ export default function ProfessionalMainPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.location.href = '/api/documents/download-session-zip'}
+              onClick={() => {
+                console.log('Download Session clicked');
+                // Create invisible link for better download handling
+                const link = document.createElement('a');
+                link.href = '/api/documents/download-session-zip';
+                link.download = `stormwater_session_${new Date().toISOString().split('T')[0]}.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                toast({
+                  title: "Download Started",
+                  description: "Your session files are being prepared for download.",
+                });
+              }}
             >
               <Download className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
               Download Session
