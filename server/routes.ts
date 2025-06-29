@@ -758,6 +758,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Claude 4 Enhanced Search endpoint
+  app.post("/api/search/claude4", async (req, res) => {
+    try {
+      const { query, mode, includeWeb, includeContext, useThinking } = req.body;
+      
+      if (!query || typeof query !== 'string') {
+        return res.json({ results: [], insights: "No query provided" });
+      }
+
+      // Get local results first
+      const localResults = await storage.globalSearch(query);
+      
+      // Enhanced Claude 4 analysis with thinking mode
+      const aiAnalyzer = new AIAnalyzer();
+      let insights = '';
+      
+      if (includeContext && localResults.documents.length > 0) {
+        const analysisPrompt = `<thinking>
+        The user is searching for "${query}" in their stormwater management system.
+        
+        Available documents: ${localResults.documents.length}
+        Available recommendations: ${localResults.recommendations.length}
+        Available analyses: ${localResults.analyses.length}
+        
+        I need to provide comprehensive insights that connect:
+        1. The search query intent
+        2. Available documents and their relevance
+        3. Regulatory compliance implications
+        4. Practical implementation guidance
+        5. Cross-references between documents
+        
+        This should be professional QSD/CPESC level analysis.
+        </thinking>
+        
+        Analyze the search query "${query}" in the context of stormwater management. 
+        
+        Available resources:
+        ${localResults.documents.map(doc => `- ${doc.originalName}: ${doc.content?.substring(0, 200)}...`).join('\n')}
+        
+        Provide professional QSD/CPESC level insights including:
+        1. Regulatory compliance considerations
+        2. Implementation best practices
+        3. Cross-document connections
+        4. Risk assessment factors
+        5. Recommended next steps`;
+        
+        try {
+          insights = await aiAnalyzer.generateDocument(analysisPrompt);
+        } catch (error) {
+          insights = `Search completed for "${query}". Found ${localResults.documents.length} documents and ${localResults.recommendations.length} recommendations. Consider reviewing regulatory compliance requirements and implementation best practices.`;
+        }
+      }
+
+      // Format results for Claude 4 enhanced display
+      const enhancedResults = [
+        ...localResults.documents.map(doc => ({
+          id: `claude4-doc-${doc.id}`,
+          title: doc.originalName || 'Document',
+          content: (doc.content || '').substring(0, 300) + '...',
+          source: 'document',
+          category: doc.category,
+          relevance: 0.95
+        })),
+        ...localResults.recommendations.map(rec => ({
+          id: `claude4-rec-${rec.id}`,
+          title: rec.title || 'Recommendation',
+          content: (rec.content || '').substring(0, 300) + '...',
+          source: 'recommendation',
+          category: rec.category,
+          relevance: 0.90
+        })),
+        ...localResults.analyses.map(analysis => ({
+          id: `claude4-analysis-${analysis.id}`,
+          title: `Analysis: ${analysis.query}`,
+          content: (analysis.analysis || '').substring(0, 300) + '...',
+          source: 'analysis',
+          relevance: 0.85
+        }))
+      ];
+
+      res.json({
+        results: enhancedResults,
+        insights: insights,
+        searchMode: 'claude4',
+        totalResults: enhancedResults.length
+      });
+
+    } catch (error) {
+      console.error("Claude 4 search error:", error);
+      res.status(500).json({ 
+        results: [], 
+        insights: "Claude 4 enhanced search temporarily unavailable",
+        error: "Search failed" 
+      });
+    }
+  });
+
   // Enhanced web search with Claude 4
   app.post("/api/search/web-enhanced", async (req, res) => {
     try {

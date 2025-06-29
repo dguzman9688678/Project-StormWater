@@ -19,7 +19,7 @@ import { AnalysisResults } from "@/components/analysis-results";
 import { AdminControls } from "@/components/admin-controls";
 import { WorkbenchPanel } from "@/components/workbench-panel";
 import { AnalysisPreview } from "@/components/analysis-preview";
-import { EnhancedSearch } from "@/components/enhanced-search";
+import { Claude4Search } from "@/components/claude4-search";
 import { SessionDownload } from "@/components/session-download";
 
 interface AnalysisResult {
@@ -236,9 +236,9 @@ export default function ProfessionalMainPage() {
             <Badge variant="secondary" className="hidden sm:block">Professional Platform</Badge>
           </div>
           
-          {/* Enhanced Search Bar */}
+          {/* Claude 4 Search Bar */}
           <div className="flex-1 max-w-2xl mx-8 hidden lg:block">
-            <EnhancedSearch 
+            <Claude4Search 
               onResultSelect={(result) => {
                 toast({
                   title: "Search Result Selected",
