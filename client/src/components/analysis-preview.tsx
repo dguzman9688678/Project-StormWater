@@ -362,8 +362,11 @@ ${i + 1}. ${rec.title}
                     
                     toast({
                       title: "Documents Generated Successfully",
-                      description: `Generated ${selectedTypes.length} professional documents for your project.`,
+                      description: `Generated ${selectedTypes.length} professional documents. Download links available below.`,
                     });
+
+                    // Return the data so the checklist can display download buttons
+                    return data;
                     
                   } catch (error) {
                     throw error;

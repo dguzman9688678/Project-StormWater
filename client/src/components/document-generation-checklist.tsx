@@ -5,11 +5,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Shield, ClipboardList, MapPin, ScrollText, AlertTriangle, Users, Wrench, Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { DownloadHelper } from "@/components/download-helper";
 
 interface DocumentGenerationChecklistProps {
   projectDescription: string;
   siteMeasurements?: any;
-  onGenerate: (selectedTypes: string[]) => Promise<void>;
+  onGenerate: (selectedTypes: string[]) => Promise<any>;
   isGenerating?: boolean;
 }
 
@@ -88,6 +89,7 @@ export function DocumentGenerationChecklist({
 }: DocumentGenerationChecklistProps) {
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const [hasGenerated, setHasGenerated] = useState(false);
+  const [generatedDocuments, setGeneratedDocuments] = useState<Array<{id: number; originalName: string; type: string}>>([]);
   const { toast } = useToast();
 
   const handleDocumentToggle = (documentId: string) => {
@@ -125,11 +127,22 @@ export function DocumentGenerationChecklist({
     }
 
     try {
-      await onGenerate(selectedDocuments);
+      const result = await onGenerate(selectedDocuments);
       setHasGenerated(true);
+      
+      // Extract generated document info from the result if available
+      if (result && result.documents) {
+        const docs = result.documents.map((doc: any) => ({
+          id: doc.document.id,
+          originalName: doc.document.originalName,
+          type: doc.type
+        }));
+        setGeneratedDocuments(docs);
+      }
+      
       toast({
-        title: "Documents Generated Successfully",
-        description: `Generated ${selectedDocuments.length} professional documents.`,
+        title: "Documents Generated Successfully", 
+        description: `Generated ${selectedDocuments.length} professional documents. Download links available below.`,
       });
     } catch (error) {
       toast({
@@ -304,6 +317,13 @@ export function DocumentGenerationChecklist({
             )}
           </Button>
         </div>
+
+        {/* Generated Documents Download Section */}
+        {hasGenerated && generatedDocuments.length > 0 && (
+          <div className="pt-4 border-t">
+            <DownloadHelper documents={generatedDocuments} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

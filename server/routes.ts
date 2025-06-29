@@ -1255,17 +1255,38 @@ Please provide a comprehensive response using information from the reference lib
       
       for (const docType of documentTypes) {
         try {
+          // Create comprehensive professional document with actual content
+          const enhancedQuery = `Generate a complete, professional ${docType.replace('_', ' ')} document for the stormwater project: ${projectDescription}.
+
+**DOCUMENT REQUIREMENTS:**
+1. Create a comprehensive, detailed document suitable for actual project use
+2. Reference ALL applicable documents from the library with proper [DOC-X] citations
+3. Include specific technical specifications, procedures, and compliance requirements
+4. Format as a complete professional document with headers, sections, and detailed content
+5. Ensure all recommendations are actionable and specific to the project
+
+**PROJECT CONTEXT:** ${projectDescription}
+${siteMeasurements ? `**SITE DATA:** ${JSON.stringify(siteMeasurements)}` : ''}
+
+**DOCUMENT TYPE SPECIFICATIONS:**
+${docType === 'sop' ? 'Standard Operating Procedure: Include step-by-step procedures, safety requirements, equipment lists, and quality control measures.' :
+  docType === 'jsa' ? 'Job Safety Analysis: Include hazard identification, risk assessment, safety controls, PPE requirements, and emergency procedures.' :
+  docType === 'excavation_permit' ? 'Excavation Permit: Include permit requirements, safety protocols, utility markings, inspection schedules, and regulatory compliance.' :
+  docType === 'swppp' ? 'Stormwater Pollution Prevention Plan: Include BMP selection, implementation schedule, monitoring protocols, and regulatory compliance.' :
+  docType === 'bmp_map' ? 'BMP Installation Map: Include detailed layout, specifications, installation sequence, and maintenance access points.' :
+  docType === 'inspection_forms' ? 'Inspection Forms: Include comprehensive checklists, monitoring schedules, documentation requirements, and corrective action protocols.' :
+  docType === 'training_materials' ? 'Training Materials: Include safety briefings, procedure overviews, competency requirements, and certification protocols.' :
+  docType === 'maintenance_plan' ? 'Maintenance Plan: Include scheduled maintenance, monitoring protocols, replacement schedules, and performance metrics.' :
+  'Professional documentation with complete technical specifications and implementation guidance.'}`;
+
           const documentRequest = {
             title: `${docType.replace('_', ' ').toUpperCase()} - ${projectDescription || 'Stormwater Project'}`,
-            query: `Generate professional ${docType.replace('_', ' ')} document for: ${projectDescription}. ${siteMeasurements ? `Site measurements: ${JSON.stringify(siteMeasurements)}` : ''}`,
+            query: enhancedQuery,
             sourceDocumentIds: allDocuments.map(doc => doc.id),
             includeRecommendations: true,
             includeAnalyses: true,
             format: 'txt' as const,
-            template: docType.includes('sop') ? 'report' as const : 
-                     docType.includes('jsa') ? 'analysis' as const :
-                     docType.includes('swppp') ? 'report' as const :
-                     'summary' as const
+            template: 'report' as const
           };
 
           const generatedDoc = await documentGenerator.generateDocument(documentRequest);
@@ -1383,6 +1404,64 @@ Please provide a comprehensive response using information from the reference lib
     } catch (error) {
       console.error('Session files error:', error);
       res.status(500).json({ error: "Failed to get session files" });
+    }
+  });
+
+  // Download individual document
+  app.get("/api/documents/:id/download", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const documentId = parseInt(id);
+      
+      if (isNaN(documentId)) {
+        return res.status(400).json({ error: "Invalid document ID" });
+      }
+
+      const document = await storage.getDocument(documentId);
+      if (!document) {
+        return res.status(404).json({ error: "Document not found" });
+      }
+
+      // Determine file extension and MIME type
+      let filename = document.originalName;
+      let mimeType = 'text/plain';
+      
+      // Ensure proper file extension
+      if (!filename.includes('.')) {
+        filename += '.txt';
+      }
+      
+      // Set MIME type based on file extension
+      const extension = filename.split('.').pop()?.toLowerCase();
+      switch (extension) {
+        case 'pdf':
+          mimeType = 'application/pdf';
+          break;
+        case 'doc':
+        case 'docx':
+          mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          break;
+        case 'txt':
+          mimeType = 'text/plain';
+          break;
+        case 'json':
+          mimeType = 'application/json';
+          break;
+        default:
+          mimeType = 'text/plain';
+      }
+
+      // Set response headers for download
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', Buffer.byteLength(document.content, 'utf8'));
+      
+      // Send the document content
+      res.send(document.content);
+
+    } catch (error) {
+      console.error('Document download error:', error);
+      res.status(500).json({ error: "Failed to download document" });
     }
   });
 
