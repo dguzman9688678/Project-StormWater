@@ -198,7 +198,9 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search with Claude 4 enhanced capabilities..."
+            placeholder={searchMode === 'ai' ? "Claude 4 Professional Analysis - Search regulations, BMPs, compliance..." : 
+                        searchMode === 'web' ? "Claude 4 Web Search - Find regulations and industry guidance..." :
+                        "Search local documents and recommendations..."}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="pl-10 pr-4"
@@ -217,14 +219,30 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
           )}
         </div>
         <Select value={searchMode} onValueChange={(value: 'local' | 'web' | 'ai') => setSearchMode(value)}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className={`w-48 ${searchMode !== 'local' ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' : ''}`}>
             <Filter className="w-4 h-4 mr-2" />
             <SelectValue />
+            {searchMode !== 'local' && <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded">Claude 4</span>}
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="local">Local Search</SelectItem>
-            <SelectItem value="web">Claude 4 Web</SelectItem>
-            <SelectItem value="ai">Claude 4 Enhanced</SelectItem>
+            <SelectItem value="local">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                <span>Local Library</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="web">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                <span>Claude 4 Web Search</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="ai">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                <span>Claude 4 Professional Analysis</span>
+              </div>
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
