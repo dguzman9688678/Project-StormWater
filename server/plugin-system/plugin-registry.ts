@@ -7,6 +7,12 @@ import { pluginManager } from './plugin-manager';
 import { StormwaterAnalysisPlugin } from './plugins/stormwater-analysis-plugin';
 import { ChatServicePlugin } from './plugins/chat-service-plugin';
 import { DocumentGeneratorPlugin } from './plugins/document-generator-plugin';
+import { RegulatoryCompliancePlugin } from './plugins/regulatory-compliance-plugin';
+import { CostEstimationPlugin } from './plugins/cost-estimation-plugin';
+import { SitePlanningPlugin } from './plugins/site-planning-plugin';
+import { RiskAssessmentPlugin } from './plugins/risk-assessment-plugin';
+import { TrainingCertificationPlugin } from './plugins/training-certification-plugin';
+import { EnvironmentalMonitoringPlugin } from './plugins/environmental-monitoring-plugin';
 
 export class PluginRegistry {
   private static instance: PluginRegistry;
@@ -30,11 +36,17 @@ export class PluginRegistry {
     console.log('Initializing AI Plugin Ecosystem...');
 
     try {
-      // Core plugins that form the foundation
+      // All 9 AI plugins in the ecosystem
       const corePlugins = [
         new StormwaterAnalysisPlugin(),
         new ChatServicePlugin(),
-        new DocumentGeneratorPlugin()
+        new DocumentGeneratorPlugin(),
+        new RegulatoryCompliancePlugin(),
+        new CostEstimationPlugin(),
+        new SitePlanningPlugin(),
+        new RiskAssessmentPlugin(),
+        new TrainingCertificationPlugin(),
+        new EnvironmentalMonitoringPlugin()
       ];
 
       // Register each plugin
@@ -75,19 +87,19 @@ export class PluginRegistry {
     console.log('Plugin ecosystem shutdown complete');
   }
 
-  // Future plugin expansion slots
-  async loadFuturePlugins(): Promise<void> {
-    console.log('🔮 Future plugin slots available:');
-    console.log('   - Regulatory Compliance AI (planned)');
-    console.log('   - Cost Estimation AI (planned)');
-    console.log('   - Site Planning AI (planned)');
-    console.log('   - Risk Assessment AI (planned)');
-    console.log('   - Training & Certification AI (planned)');
-    console.log('   - Environmental Monitoring AI (planned)');
-    
-    // When ready to add new plugins:
-    // const newPlugin = new RegulatoryCompliancePlugin();
-    // await pluginManager.registerPlugin(newPlugin);
+  // All plugins now active - no future expansion needed
+  getActivePlugins(): string[] {
+    return [
+      'Stormwater Analysis AI',
+      'Chat Service AI', 
+      'Document Generator AI',
+      'Regulatory Compliance AI',
+      'Cost Estimation AI',
+      'Site Planning AI',
+      'Risk Assessment AI',
+      'Training & Certification AI',
+      'Environmental Monitoring AI'
+    ];
   }
 
   getSystemStatus(): any {
