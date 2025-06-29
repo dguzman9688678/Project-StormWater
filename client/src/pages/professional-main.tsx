@@ -236,44 +236,16 @@ export default function ProfessionalMainPage() {
             <Badge variant="secondary" className="hidden sm:block">Professional Platform</Badge>
           </div>
           
-          {/* Working Search Bar */}
+          {/* Enhanced Search Bar */}
           <div className="flex-1 max-w-2xl mx-8 hidden lg:block">
-            <div className="relative flex space-x-2">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search documents and recommendations..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  if (searchQuery.length >= 2) {
-                    try {
-                      const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
-                      const data = await response.json();
-                      toast({
-                        title: "Search Complete",
-                        description: `Found ${data.documents?.length || 0} documents, ${data.recommendations?.length || 0} recommendations`,
-                      });
-                    } catch (error) {
-                      toast({
-                        title: "Search Failed",
-                        description: "Unable to perform search",
-                        variant: "destructive"
-                      });
-                    }
-                  }
-                }}
-                disabled={searchQuery.length < 2}
-              >
-                Search
-              </Button>
-            </div>
+            <EnhancedSearch 
+              onResultSelect={(result) => {
+                toast({
+                  title: "Search Result Selected",
+                  description: result.title,
+                });
+              }}
+            />
           </div>
           
           <div className="flex items-center space-x-2 lg:space-x-4">
