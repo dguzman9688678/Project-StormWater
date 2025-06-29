@@ -1238,6 +1238,72 @@ Please provide a comprehensive response using information from the reference lib
     }
   });
 
+  // Generate professional documents (SOPs, JSAs, permits, etc.)
+  app.post("/api/documents/generate-professional", async (req, res) => {
+    try {
+      const { documentTypes, projectDescription, siteMeasurements } = req.body;
+
+      if (!documentTypes || !Array.isArray(documentTypes) || documentTypes.length === 0) {
+        return res.status(400).json({ error: "Document types are required" });
+      }
+
+      // Get all documents for context
+      const allDocuments = await storage.getAllDocuments();
+      
+      // Generate each requested document type
+      const generatedDocuments = [];
+      
+      for (const docType of documentTypes) {
+        try {
+          const documentRequest = {
+            title: `${docType.replace('_', ' ').toUpperCase()} - ${projectDescription || 'Stormwater Project'}`,
+            query: `Generate professional ${docType.replace('_', ' ')} document for: ${projectDescription}. ${siteMeasurements ? `Site measurements: ${JSON.stringify(siteMeasurements)}` : ''}`,
+            sourceDocumentIds: allDocuments.map(doc => doc.id),
+            includeRecommendations: true,
+            includeAnalyses: true,
+            format: 'txt' as const,
+            template: docType.includes('sop') ? 'report' as const : 
+                     docType.includes('jsa') ? 'analysis' as const :
+                     docType.includes('swppp') ? 'report' as const :
+                     'summary' as const
+          };
+
+          const generatedDoc = await documentGenerator.generateDocument(documentRequest);
+          
+          // Store the generated document
+          const newDoc = await storage.createDocument({
+            originalName: `${documentRequest.title}.txt`,
+            filename: `${documentRequest.title}.txt`,
+            fileSize: Buffer.byteLength(generatedDoc.content, 'utf8'),
+            content: generatedDoc.content,
+            description: `Generated ${docType} document`,
+            category: 'stormwater'
+          });
+
+          generatedDocuments.push({
+            type: docType,
+            document: newDoc,
+            metadata: generatedDoc.metadata
+          });
+
+        } catch (error) {
+          console.error(`Failed to generate ${docType}:`, error);
+          // Continue with other documents even if one fails
+        }
+      }
+
+      res.json({
+        success: true,
+        documentsGenerated: generatedDocuments.length,
+        documents: generatedDocuments
+      });
+
+    } catch (error) {
+      console.error('Professional document generation error:', error);
+      res.status(500).json({ error: "Failed to generate professional documents" });
+    }
+  });
+
   // Delete document
   app.delete("/api/documents/:id", async (req, res) => {
     try {
