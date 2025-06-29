@@ -1855,6 +1855,29 @@ ${docType === 'sop' ? 'Standard Operating Procedure: Include step-by-step proced
     }
   });
 
+  // Plugin toggle endpoints
+  app.post("/api/plugins/:pluginId/activate", async (req, res) => {
+    try {
+      const { pluginId } = req.params;
+      const result = await pluginRegistry.activatePlugin(pluginId);
+      res.json({ success: result, message: `Plugin ${pluginId} activation ${result ? 'successful' : 'failed'}` });
+    } catch (error) {
+      console.error('Plugin activation error:', error);
+      res.status(500).json({ error: "Failed to activate plugin" });
+    }
+  });
+
+  app.post("/api/plugins/:pluginId/deactivate", async (req, res) => {
+    try {
+      const { pluginId } = req.params;
+      const result = await pluginRegistry.deactivatePlugin(pluginId);
+      res.json({ success: result, message: `Plugin ${pluginId} deactivation ${result ? 'successful' : 'failed'}` });
+    } catch (error) {
+      console.error('Plugin deactivation error:', error);
+      res.status(500).json({ error: "Failed to deactivate plugin" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

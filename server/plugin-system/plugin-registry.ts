@@ -122,6 +122,20 @@ export class PluginRegistry {
     if (healthyCount > totalCount * 0.5) return 'degraded';
     return 'error';
   }
+
+  async activatePlugin(pluginId: string): Promise<boolean> {
+    // For now, plugins are managed by the plugin manager
+    // This would interface with the plugin manager to activate plugins
+    console.log(`Activating plugin: ${pluginId}`);
+    return true; // Placeholder - would implement actual activation logic
+  }
+
+  async deactivatePlugin(pluginId: string): Promise<boolean> {
+    // For now, plugins are managed by the plugin manager
+    // This would interface with the plugin manager to deactivate plugins
+    console.log(`Deactivating plugin: ${pluginId}`);
+    return true; // Placeholder - would implement actual deactivation logic
+  }
 }
 
 // Export singleton instance
