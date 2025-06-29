@@ -11,7 +11,8 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Cpu, HardDrive, Activity, Zap, Settings, TrendingUp } from "lucide-react";
+import { Cpu, HardDrive, Activity, Zap, Settings, TrendingUp, Power } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 interface PluginStatus {
   id: string;
@@ -60,6 +61,16 @@ export function PluginEcosystemDashboard() {
   const testProcessing = useMutation({
     mutationFn: async (testData: any) => {
       return await apiRequest('/api/plugins/process', 'POST', testData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/plugins'] });
+    }
+  });
+
+  // Toggle plugin on/off
+  const togglePlugin = useMutation({
+    mutationFn: async ({ pluginId, activate }: { pluginId: string; activate: boolean }) => {
+      return await apiRequest(`/api/plugins/${pluginId}/${activate ? 'activate' : 'deactivate'}`, 'POST');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/plugins'] });
@@ -206,7 +217,12 @@ export function PluginEcosystemDashboard() {
         <TabsContent value="plugins" className="space-y-4">
           <div className="grid gap-4">
             {systemStatus?.plugins?.map((plugin) => (
-              <PluginCard key={plugin.id} plugin={plugin} />
+              <PluginCard 
+                key={plugin.id} 
+                plugin={plugin} 
+                onToggle={(pluginId, activate) => togglePlugin.mutate({ pluginId, activate })}
+                isToggling={togglePlugin.isPending}
+              />
             ))}
           </div>
         </TabsContent>
@@ -287,7 +303,15 @@ export function PluginEcosystemDashboard() {
   );
 }
 
-function PluginCard({ plugin }: { plugin: PluginInfo }) {
+function PluginCard({ 
+  plugin, 
+  onToggle, 
+  isToggling 
+}: { 
+  plugin: PluginInfo; 
+  onToggle: (pluginId: string, activate: boolean) => void;
+  isToggling: boolean;
+}) {
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'analysis': return <TrendingUp className="w-4 h-4" />;
@@ -320,10 +344,19 @@ function PluginCard({ plugin }: { plugin: PluginInfo }) {
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <Badge variant={plugin.isActive ? "default" : "secondary"}>
               {plugin.isActive ? "Active" : "Inactive"}
             </Badge>
+            
+            <div className="flex items-center space-x-2">
+              <Power className="w-4 h-4 text-gray-500" />
+              <Switch
+                checked={plugin.isActive}
+                onCheckedChange={(checked) => onToggle(plugin.id, checked)}
+                disabled={isToggling}
+              />
+            </div>
           </div>
         </div>
       </CardContent>
