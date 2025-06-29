@@ -236,16 +236,36 @@ export default function ProfessionalMainPage() {
             <Badge variant="secondary" className="hidden sm:block">Professional Platform</Badge>
           </div>
           
-          {/* Enhanced Search Bar */}
+          {/* Simple Search Bar */}
           <div className="flex-1 max-w-2xl mx-8 hidden lg:block">
-            <EnhancedSearch 
-              onResultSelect={(result) => {
-                toast({
-                  title: "Search Result Selected",
-                  description: result.title,
-                });
-              }}
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search documents and recommendations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchQuery.length >= 2) {
+                    fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`)
+                      .then(res => res.json())
+                      .then(data => {
+                        toast({
+                          title: "Search Complete",
+                          description: `Found ${data.documents?.length || 0} documents, ${data.recommendations?.length || 0} recommendations`,
+                        });
+                      })
+                      .catch(() => {
+                        toast({
+                          title: "Search Failed",
+                          description: "Unable to perform search",
+                          variant: "destructive"
+                        });
+                      });
+                  }
+                }}
+              />
+            </div>
           </div>
           
           <div className="flex items-center space-x-2 lg:space-x-4">
