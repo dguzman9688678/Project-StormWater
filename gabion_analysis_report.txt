@@ -1,0 +1,59 @@
+COMPREHENSIVE GABION BASKET ANALYSIS REPORT
+==========================================
+Project: Road Support Structure
+Date: June 28, 2025
+Client Request: Gabion basket for new road side support
+
+SITE SPECIFICATIONS
+===================
+- Length: 16 feet
+- Width: 10 feet  
+- Depth: 6 feet
+- Total Volume: 960 cubic feet
+- Application: Road side support/retaining structure
+
+PROFESSIONAL ENGINEERING ANALYSIS
+=================================
+
+1. STRUCTURAL DESIGN REQUIREMENTS
+- Gabion basket sizing appears appropriate for road support application
+- 6-foot depth provides adequate bearing capacity for typical road loads
+- 16' x 10' footprint distributes load effectively
+
+2. MATERIAL SPECIFICATIONS NEEDED
+- Wire mesh: Minimum 3.9mm (12 gauge) galvanized steel wire
+- Mesh opening: 80mm x 100mm (3" x 4") hexagonal mesh
+- Fill material: Well-graded rock, 4" to 8" diameter stones
+- Stone gradation: ASTM D448 Size No. 3 or 4
+
+3. STORMWATER CONSIDERATIONS
+- Gabion baskets provide excellent drainage
+- Recommend geotextile fabric backing to prevent soil migration
+- Consider French drain behind structure for enhanced drainage
+- Ensure proper surface drainage to prevent erosion
+
+4. INSTALLATION REQUIREMENTS
+- Excavate to firm, undisturbed soil
+- Minimum 6" compacted stone base
+- Level and square installation critical
+- Connect adjacent baskets with tying wire
+
+5. REGULATORY COMPLIANCE ITEMS
+- Check local building codes for retaining wall requirements
+- May require structural engineer stamp for heights over 4 feet
+- Verify setback requirements from road right-of-way
+- Consider environmental permits if near waterways
+
+COST CONSIDERATIONS
+==================
+Note: Provide actual quotes from suppliers for authentic pricing
+
+RECOMMENDATIONS
+===============
+1. Obtain geotechnical analysis for bearing capacity verification
+2. Design proper drainage system behind gabion wall
+3. Use high-quality galvanized wire for longevity
+4. Consider professional installation for structural integrity
+5. Plan for regular inspection and maintenance schedule
+
+This analysis is based on standard engineering practices. Recommend consultation with local structural engineer for final design verification.

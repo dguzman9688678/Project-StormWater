@@ -58,21 +58,31 @@ export class AIAnalyzer {
     
     // Check if image is too large for visual analysis
     if (document.content.includes('IMAGE_TOO_LARGE:')) {
-      // Handle large images with text-based analysis
-      const textAnalysisPrompt = `As a certified QSD/CPESC stormwater professional, analyze the construction site image "${document.originalName}" by referencing the comprehensive document library below:
+      // Handle large images with comprehensive text-based analysis using all reference documents
+      const textAnalysisPrompt = `<thinking>
+The user has uploaded a large construction site image that exceeded Claude's visual analysis limit. However, I can provide comprehensive professional analysis by:
+1. Analyzing the user's specific query and measurements
+2. Cross-referencing ALL available documents in the library
+3. Providing detailed engineering specifications based on their requirements
+4. Ensuring all recommendations cite authentic sources from the document library
+</thinking>
 
-**REFERENCE DOCUMENT LIBRARY:**
+As a certified QSD/CPESC stormwater professional, analyze the construction site situation described in "${document.originalName}" by comprehensively referencing the entire document library:
+
+**REFERENCE DOCUMENT LIBRARY (${allDocuments.length} DOCUMENTS):**
 ${referenceContext}
 
-**IMAGE ANALYSIS REQUEST:**
-This large construction site image (${document.originalName}) exceeded the visual analysis size limit. Provide professional stormwater analysis based on typical construction site conditions and the document library.
+**SITE ANALYSIS REQUEST:**
+Large construction site image (${document.originalName}) - Analysis based on user specifications and comprehensive document library cross-referencing.
 
-${query ? `**User Question**: ${query}` : ''}
+${query ? `**SPECIFIC USER REQUEST**: ${query}` : ''}
 
-**COMPREHENSIVE ANALYSIS INSTRUCTIONS:**
-1. **Site Assessment**: Based on filename and typical construction issues
-2. **Regulatory Compliance**: Reference specific codes from the document library
-3. **BMP Specifications**: Recommend appropriate BMPs with detailed technical specifications
+**COMPREHENSIVE PROFESSIONAL ANALYSIS REQUIREMENTS:**
+You MUST analyze and cite ALL relevant documents from the library above. This is critical for providing complete stormwater solutions.
+
+1. **Site-Specific Assessment**: Analyze the specific measurements and requirements provided by the user
+2. **Regulatory Compliance**: Reference ALL applicable codes, standards, and requirements from the document library with [DOC-X] citations
+3. **Technical Specifications**: Provide detailed engineering specifications based on actual standards from the documents
 4. **Materials & Installation**: Provide complete materials lists, quantities, and installation procedures
 5. **Implementation Timeline**: Include installation sequence, timing, and maintenance requirements
 6. **Cost Analysis**: Provide material and labor estimates where applicable
