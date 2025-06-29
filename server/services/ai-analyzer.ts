@@ -430,10 +430,10 @@ Always cite specific documents, sections, and standards from the provided librar
     console.log(`Building reference context from ${referenceDocs.length} documents for comprehensive analysis`);
 
     // Create comprehensive reference with ALL documents for proper citations
-    const referenceContext = referenceDocs.map((doc, index) => {
+    const referenceContext = referenceDocs.map((doc) => {
       // Include more content for better analysis - this is critical for document referencing
       const preview = doc.content.substring(0, 1500); // Increased from 500 to 1500 for better context
-      const docName = doc.originalName || `Document-${index + 1}`;
+      const docName = doc.originalName || 'Untitled Document';
       return `[REFERENCE: "${docName}"] (${doc.category})
 FILE SIZE: ${(doc.content.length / 1024).toFixed(1)}KB
 CONTENT EXTRACT: ${preview}${doc.content.length > 1500 ? '...[FULL DOCUMENT AVAILABLE]' : ''}

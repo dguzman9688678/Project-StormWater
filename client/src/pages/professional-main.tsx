@@ -262,10 +262,14 @@ export default function ProfessionalMainPage() {
             
             <Separator orientation="vertical" className="h-6" />
             
-            <SessionDownload 
-              sessionFiles={sessionFiles}
-              onRefreshFiles={fetchSessionFiles}
-            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.href = '/api/documents/download-session-zip'}
+            >
+              <Download className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
+              Download Session
+            </Button>
             
             <Button
               variant="outline"
