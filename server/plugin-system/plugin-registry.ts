@@ -36,17 +36,11 @@ export class PluginRegistry {
     console.log('Initializing AI Plugin Ecosystem...');
 
     try {
-      // All 9 AI plugins in the ecosystem
+      // Core plugins only - keep original 3
       const corePlugins = [
         new StormwaterAnalysisPlugin(),
         new ChatServicePlugin(),
-        new DocumentGeneratorPlugin(),
-        new RegulatoryCompliancePlugin(),
-        new CostEstimationPlugin(),
-        new SitePlanningPlugin(),
-        new RiskAssessmentPlugin(),
-        new TrainingCertificationPlugin(),
-        new EnvironmentalMonitoringPlugin()
+        new DocumentGeneratorPlugin()
       ];
 
       // Register each plugin
