@@ -356,64 +356,26 @@ ${rec.content}
     analyses: AiAnalysis[] = []
   ): Promise<string> {
     
-    // Build comprehensive reference context from ALL documents
+    // Build optimized reference context from ALL documents (reduced token usage)
     const documentContext = sourceDocuments.map((doc, index) => {
-      return `**[DOC-${index + 1}] ${doc.originalName}** (${doc.category})
-Content Summary: ${doc.content.substring(0, 2000)}${doc.content.length > 2000 ? '...' : ''}
-Key Information: ${doc.description || 'Professional stormwater documentation'}
-
----`;
+      return `[DOC-${index + 1}] ${doc.originalName} (${doc.category}): ${doc.content.substring(0, 800)}${doc.content.length > 800 ? '...' : ''}`;
     }).join('\n\n');
 
-    const prompt = `<thinking>
-The user is requesting a comprehensive professional document that must reference ALL available documents from the stormwater library. This is critical - I need to analyze and cite every single document provided to ensure complete coverage of available knowledge and regulatory requirements.
+    const prompt = `As a QSD/CPESC engineer, create: ${title}
 
-The documents provided contain valuable engineering information, regulatory guidance, and practical implementation details that must be incorporated into the final professional document with proper citations.
-</thinking>
+**Project:** ${query || 'Stormwater management documentation'}
 
-As a certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control), create a comprehensive professional document: ${title}
-
-**PROJECT REQUIREMENTS:** ${query || 'Comprehensive stormwater management documentation'}
-
-**COMPREHENSIVE DOCUMENT LIBRARY ANALYSIS (${sourceDocuments.length} DOCUMENTS):**
+**Library (${sourceDocuments.length} docs - CITE ALL with [DOC-X]):**
 ${documentContext}
 
-**CRITICAL MANDATE:** You MUST analyze and reference ALL ${sourceDocuments.length} documents above with proper [DOC-X] citations. This is essential for complete professional documentation.
+**Requirements:**
+1. Reference ALL ${sourceDocuments.length} documents with [DOC-X] citations
+2. Professional format with headers and sections
+3. Technical specifications and compliance requirements
+4. Implementation procedures and safety protocols
+5. Regulatory compliance and best practices
 
-**PROFESSIONAL DOCUMENT REQUIREMENTS:**
-
-1. **EXECUTIVE SUMMARY**
-   - Comprehensive project overview incorporating insights from ALL library documents
-   - Key findings with specific citations from [DOC-1] through [DOC-${sourceDocuments.length}]
-   - Regulatory compliance requirements referenced from applicable documents
-
-2. **COMPREHENSIVE DOCUMENT ANALYSIS**
-   - Detailed analysis of EVERY document in the library with [DOC-X] citations
-   - Cross-reference overlapping requirements and recommendations
-   - Identify gaps and complementary information across all documents
-
-3. **PROFESSIONAL ENGINEERING RECOMMENDATIONS**
-   - Synthesize recommendations from ALL documents
-   - Prioritize actions based on regulatory requirements and best practices
-   - Include specific implementation guidance with proper citations
-
-4. **TECHNICAL SPECIFICATIONS & COMPLIANCE**
-   - Reference ALL applicable standards and regulations from the documents
-   - Include detailed technical requirements with document citations
-   - Ensure complete regulatory compliance coverage
-
-5. **IMPLEMENTATION PLAN**
-   - Step-by-step procedures incorporating guidance from all documents
-   - Timeline and sequencing based on professional standards
-   - Quality control measures and inspection requirements
-
-**CITATION REQUIREMENTS:**
-- EVERY recommendation must include [DOC-X] citations
-- Reference multiple documents where applicable
-- Ensure NO document is left unreferenced
-- Use format: "According to [DOC-1] and [DOC-3], the recommended approach..."
-
-Generate a complete professional document suitable for actual project use with comprehensive library integration.`;
+Create a complete professional document for actual project use.`;
 
     try {
       // Use AI analyzer to generate comprehensive document with all library references
