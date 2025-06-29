@@ -758,6 +758,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Simple cache for Claude 4 search performance
+  const claude4Cache = new Map<string, { result: any; timestamp: number }>();
+  const CACHE_TTL = 3 * 60 * 1000; // 3 minutes
+  
   // Claude 4 Enhanced Search endpoint
   app.post("/api/search/claude4", async (req, res) => {
     try {
@@ -765,6 +769,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!query || typeof query !== 'string') {
         return res.json({ results: [], insights: "No query provided" });
+      }
+
+      // Performance optimization: Check cache first
+      const cacheKey = `${query}-${mode}-${includeContext}`;
+      const cached = claude4Cache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+        return res.json(cached.result);
       }
 
       // Get local results first
@@ -798,57 +809,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         Analyze the search query "${query}" in context of these available stormwater management resources:
         
-        **Available Documents:**
-        ${localResults.documents.map(doc => `- ${doc.originalName}: ${doc.content?.substring(0, 200)}...`).join('\n')}
+        **Key Documents (Top 5):**
+        ${localResults.documents.slice(0, 5).map(doc => `- ${doc.originalName}: ${doc.content?.substring(0, 100)}...`).join('\n')}
         
-        **Previous Recommendations:**
-        ${localResults.recommendations.map(rec => `- ${rec.title}: ${rec.content?.substring(0, 150)}...`).join('\n')}
+        **Recent Recommendations:**
+        ${localResults.recommendations.slice(0, 3).map(rec => `- ${rec.title}: ${rec.content?.substring(0, 75)}...`).join('\n')}
         
-        **Previous Analyses:**
-        ${localResults.analyses.map(analysis => `- Query: ${analysis.query} | Analysis: ${analysis.analysis?.substring(0, 150)}...`).join('\n')}
+        Provide concise professional guidance:
         
-        Provide professional analysis including:
+        ## Compliance & Implementation
+        - Key regulations and BMPs
+        - Installation requirements
+        - Risk considerations
+        - Next steps`;
         
-        ## Regulatory Compliance
-        - Applicable regulations and standards
-        - Compliance requirements and deadlines
-        - Permit considerations
-        
-        ## Implementation Guidance
-        - Best management practices (BMPs)
-        - Technical specifications
-        - Installation and maintenance requirements
-        
-        ## Risk Assessment
-        - Potential failure modes
-        - Environmental impacts
-        - Mitigation strategies
-        
-        ## Cross-Document Connections
-        - Related documents and sections
-        - Conflicting or complementary guidance
-        - Missing information needs
-        
-        ## Recommended Actions
-        - Immediate next steps
-        - Timeline considerations
-        - Resource requirements`;
+        const MAX_TOKENS = 2000; // Reduced token limit for faster response
         
         try {
-          insights = await aiAnalyzer.generateDocument(searchAnalysisPrompt);
+          // Performance optimization: 8 second timeout for faster response
+          const analysisPromise = aiAnalyzer.generateDocument(searchAnalysisPrompt);
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Analysis timeout')), 8000);
+          });
           
-          // Save this search analysis for future reference
+          insights = await Promise.race([analysisPromise, timeoutPromise]) as string;
+          
+          // Non-blocking async save for performance
           if (insights && localResults.documents.length > 0) {
-            try {
-              await storage.createAiAnalysis({
+            setImmediate(() => {
+              storage.createAiAnalysis({
                 documentId: localResults.documents[0].id,
-                query: `Search Analysis: ${query}`,
+                query: `Search: ${query}`,
                 analysis: insights,
-                insights: [`Search performed for: ${query}`, `Found ${localResults.documents.length} documents`, `Claude 4 enhanced analysis completed`]
-              });
-            } catch (saveError) {
-              console.log('Note: Could not save search analysis to database');
-            }
+                insights: [`Claude 4 analysis`]
+              }).catch(err => console.log('Background save failed'));
+            });
           }
         } catch (error) {
           console.error('Claude 4 analysis error:', error);
@@ -901,12 +896,17 @@ For detailed professional analysis, please ensure Claude 4 API access is properl
         }))
       ];
 
-      res.json({
+      const result = {
         results: enhancedResults,
         insights: insights,
         searchMode: 'claude4',
         totalResults: enhancedResults.length
-      });
+      };
+      
+      // Cache the result for performance
+      claude4Cache.set(cacheKey, { result, timestamp: Date.now() });
+      
+      res.json(result);
 
     } catch (error) {
       console.error("Claude 4 search error:", error);
