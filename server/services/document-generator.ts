@@ -355,74 +355,71 @@ ${rec.content}
     recommendations: Recommendation[] = [],
     analyses: AiAnalysis[] = []
   ): Promise<string> {
-    const prompt = `Create a comprehensive stormwater engineering report with the following specifications:
+    
+    // Build comprehensive reference context from ALL documents
+    const documentContext = sourceDocuments.map((doc, index) => {
+      return `**[DOC-${index + 1}] ${doc.originalName}** (${doc.category})
+Content Summary: ${doc.content.substring(0, 2000)}${doc.content.length > 2000 ? '...' : ''}
+Key Information: ${doc.description || 'Professional stormwater documentation'}
 
-Title: ${title}
-${query ? `Query/Focus: ${query}` : ''}
+---`;
+    }).join('\n\n');
 
-Source Documents (${sourceDocuments.length}):
-${sourceDocuments.map(doc => `- ${doc.originalName} (${doc.category})`).join('\n')}
+    const prompt = `<thinking>
+The user is requesting a comprehensive professional document that must reference ALL available documents from the stormwater library. This is critical - I need to analyze and cite every single document provided to ensure complete coverage of available knowledge and regulatory requirements.
 
-Available Recommendations: ${recommendations.length}
-Available Analyses: ${analyses.length}
+The documents provided contain valuable engineering information, regulatory guidance, and practical implementation details that must be incorporated into the final professional document with proper citations.
+</thinking>
 
-Please generate a professional engineering report that includes:
+As a certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control), create a comprehensive professional document: ${title}
 
-1. EXECUTIVE SUMMARY
-   - Project overview and objectives
-   - Key findings and recommendations
-   - Compliance requirements
+**PROJECT REQUIREMENTS:** ${query || 'Comprehensive stormwater management documentation'}
 
-2. DOCUMENT ANALYSIS
-   ${sourceDocuments.length > 0 ? 
-     sourceDocuments.map(doc => `
-   - Analysis of ${doc.originalName}:
-     ${doc.content.substring(0, 500)}...
-   `).join('\n') : '- No source documents provided'}
+**COMPREHENSIVE DOCUMENT LIBRARY ANALYSIS (${sourceDocuments.length} DOCUMENTS):**
+${documentContext}
 
-3. ENGINEERING RECOMMENDATIONS
-   ${recommendations.length > 0 ? 
-     recommendations.slice(0, 10).map(rec => `
-   - ${rec.title} (${rec.category.toUpperCase()})
-     ${rec.content}
-     Citation: ${rec.citation}
-   `).join('\n') : '- Standard stormwater management practices apply'}
+**CRITICAL MANDATE:** You MUST analyze and reference ALL ${sourceDocuments.length} documents above with proper [DOC-X] citations. This is essential for complete professional documentation.
 
-4. TECHNICAL ASSESSMENT
-   ${analyses.length > 0 ? 
-     analyses.slice(0, 5).map(analysis => `
-   - ${analysis.query}
-     ${analysis.analysis}
-   `).join('\n') : '- Detailed technical assessment to be conducted'}
+**PROFESSIONAL DOCUMENT REQUIREMENTS:**
 
-5. COMPLIANCE & IMPLEMENTATION
-   - Regulatory requirements
-   - Implementation timeline
-   - Monitoring and maintenance
+1. **EXECUTIVE SUMMARY**
+   - Comprehensive project overview incorporating insights from ALL library documents
+   - Key findings with specific citations from [DOC-1] through [DOC-${sourceDocuments.length}]
+   - Regulatory compliance requirements referenced from applicable documents
 
-6. CONCLUSION
-   - Summary of key points
-   - Next steps
-   - Contact information
+2. **COMPREHENSIVE DOCUMENT ANALYSIS**
+   - Detailed analysis of EVERY document in the library with [DOC-X] citations
+   - Cross-reference overlapping requirements and recommendations
+   - Identify gaps and complementary information across all documents
 
-Please format this as a professional engineering document with proper sections, technical language appropriate for stormwater management, and actionable recommendations.`;
+3. **PROFESSIONAL ENGINEERING RECOMMENDATIONS**
+   - Synthesize recommendations from ALL documents
+   - Prioritize actions based on regulatory requirements and best practices
+   - Include specific implementation guidance with proper citations
+
+4. **TECHNICAL SPECIFICATIONS & COMPLIANCE**
+   - Reference ALL applicable standards and regulations from the documents
+   - Include detailed technical requirements with document citations
+   - Ensure complete regulatory compliance coverage
+
+5. **IMPLEMENTATION PLAN**
+   - Step-by-step procedures incorporating guidance from all documents
+   - Timeline and sequencing based on professional standards
+   - Quality control measures and inspection requirements
+
+**CITATION REQUIREMENTS:**
+- EVERY recommendation must include [DOC-X] citations
+- Reference multiple documents where applicable
+- Ensure NO document is left unreferenced
+- Use format: "According to [DOC-1] and [DOC-3], the recommended approach..."
+
+Generate a complete professional document suitable for actual project use with comprehensive library integration.`;
 
     try {
-      const analysisResult = await this.aiAnalyzer.analyzeDocument(
-        { 
-          id: 0, 
-          originalName: `${title} - Generation Request`, 
-          content: prompt, 
-          category: 'analysis',
-          description: null,
-          filename: '',
-          fileSize: 0,
-          uploadedAt: new Date()
-        },
-        query
-      );
+      // Use AI analyzer to generate comprehensive document with all library references
+      const generatedContent = await this.aiAnalyzer.generateDocument(prompt);
       
-      return this.formatReportContent(title, analysisResult.analysis, sourceDocuments, recommendations);
+      return generatedContent;
     } catch (error) {
       console.error('Error generating AI report:', error);
       return this.generateFallbackReport(title, query, sourceDocuments, recommendations, analyses);
