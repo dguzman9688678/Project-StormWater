@@ -183,6 +183,12 @@ export default function ProfessionalMainPage() {
       return;
     }
     
+    // Show loading status
+    toast({
+      title: "Analysis Starting",
+      description: "Processing documents with AI... Please wait.",
+    });
+    
     analysisMutation.mutate({ files, description });
   };
 

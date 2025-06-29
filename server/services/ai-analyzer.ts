@@ -361,10 +361,11 @@ QSD/CPESC RECOMMENDATION: [Professional BMP Title] - [Complete implementation pa
 - Performance monitoring and documentation requirements
 - Repair and replacement protocols
 
-**REGULATORY COMPLIANCE:**
-- Applicable permit requirements and citations
-- Documentation and reporting requirements
-- Inspection and certification procedures
+**REGULATORY COMPLIANCE (WITH EXACT CITATIONS):**
+- Applicable permit requirements with specific document citations including chapter, section, page numbers (e.g., "California Stormwater Manual Volume 2, Chapter 4, Section 4.2.1, Page 4-15")
+- Documentation requirements citing exact regulatory source with section numbers
+- Inspection procedures referencing specific standards with document name and section citations
+- All regulatory references MUST include actual document name, chapter, section, and page when available from reference library
 
 **COST ANALYSIS (AUTHENTIC SOURCES ONLY):**
 - ONLY provide dollar amounts if they are directly sourced from reference documents OR user-provided cost data
@@ -689,14 +690,27 @@ STORMWATER: [Implementation-focused title] - [Detailed professional guidance wit
     }
 
     try {
+      const enhancedPrompt = `${prompt}
+
+**CRITICAL FORMATTING REQUIREMENTS:**
+1. Write in natural, flowing paragraphs - NOT bullet points or repetitive lists
+2. Avoid repetitive content - each section must be unique and distinct
+3. Use professional, readable language with technical precision
+4. Create coherent narrative flow between sections
+5. No duplicate information across sections
+6. Write as a cohesive document, not fragmented pieces
+7. Each paragraph should add new information without redundancy
+
+Generate a polished, professional document with natural language flow.`;
+
       const response = await this.anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
-        system: `You are a specialized stormwater engineering document generator. Create professional engineering documents with technical specifications, calculations, and regulatory compliance information.`,
+        system: `You are a specialized stormwater engineering document generator. Create professional engineering documents with technical specifications, calculations, and regulatory compliance information. Focus on natural language flow and avoid repetitive content.`,
         messages: [
           {
             role: 'user',
-            content: prompt
+            content: enhancedPrompt
           }
         ],
       });
