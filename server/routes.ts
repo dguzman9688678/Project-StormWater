@@ -1304,6 +1304,88 @@ Please provide a comprehensive response using information from the reference lib
     }
   });
 
+  // Download session files as ZIP
+  app.post("/api/documents/download-session-zip", async (req, res) => {
+    try {
+      const { fileIds } = req.body;
+
+      if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
+        return res.status(400).json({ error: "File IDs are required" });
+      }
+
+      const archiver = require('archiver');
+      const archive = archiver('zip', { zlib: { level: 9 } });
+
+      // Set response headers for ZIP download
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `stormwater_session_${timestamp}.zip`;
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+      // Pipe archive to response
+      archive.pipe(res);
+
+      // Add each requested file to the archive
+      for (const fileId of fileIds) {
+        try {
+          const document = await storage.getDocument(parseInt(fileId));
+          if (!document) {
+            console.warn(`Document ${fileId} not found, skipping`);
+            continue;
+          }
+
+          // Determine file extension from original name or content type
+          let filename = document.originalName;
+          if (!filename.includes('.')) {
+            filename += '.txt'; // Default extension
+          }
+
+          // Add file content to archive
+          archive.append(document.content, { name: filename });
+
+        } catch (error) {
+          console.error(`Error adding file ${fileId} to archive:`, error);
+          // Continue with other files
+        }
+      }
+
+      // Finalize the archive
+      await archive.finalize();
+
+    } catch (error) {
+      console.error('Session ZIP download error:', error);
+      res.status(500).json({ error: "Failed to create session ZIP file" });
+    }
+  });
+
+  // Get recent session files (files created in last 24 hours)
+  app.get("/api/documents/session-files", async (req, res) => {
+    try {
+      const allDocuments = await storage.getAllDocuments();
+      
+      // Filter for recent files (last 24 hours) and sort by creation date
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const sessionFiles = allDocuments
+        .filter(doc => new Date(doc.uploadedAt) > twentyFourHoursAgo)
+        .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
+        .map(doc => ({
+          id: doc.id,
+          originalName: doc.originalName,
+          description: doc.description,
+          category: doc.category,
+          fileSize: doc.fileSize,
+          createdAt: doc.uploadedAt.toISOString(),
+          isGenerated: doc.description?.includes('Generated') || false
+        }));
+
+      res.json({ sessionFiles });
+
+    } catch (error) {
+      console.error('Session files error:', error);
+      res.status(500).json({ error: "Failed to get session files" });
+    }
+  });
+
   // Delete document
   app.delete("/api/documents/:id", async (req, res) => {
     try {

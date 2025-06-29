@@ -20,6 +20,7 @@ import { AdminControls } from "@/components/admin-controls";
 import { WorkbenchPanel } from "@/components/workbench-panel";
 import { AnalysisPreview } from "@/components/analysis-preview";
 import { EnhancedSearch } from "@/components/enhanced-search";
+import { SessionDownload } from "@/components/session-download";
 
 interface AnalysisResult {
   document: any;
@@ -44,6 +45,7 @@ export default function ProfessionalMainPage() {
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [selectedDocument, setSelectedDocument] = useState<DocumentPreview | null>(null);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [sessionFiles, setSessionFiles] = useState<any[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -153,6 +155,23 @@ export default function ProfessionalMainPage() {
     },
   });
 
+  // Fetch session files
+  const fetchSessionFiles = async () => {
+    try {
+      const response = await fetch('/api/documents/session-files');
+      if (!response.ok) throw new Error('Failed to fetch session files');
+      const data = await response.json();
+      setSessionFiles(data.sessionFiles || []);
+    } catch (error) {
+      console.error('Error fetching session files:', error);
+      toast({
+        title: "Session Fetch Failed",
+        description: "Could not load session files",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Analysis function
   const performAnalysis = () => {
     if (files.length === 0) {
@@ -242,6 +261,11 @@ export default function ProfessionalMainPage() {
             )}
             
             <Separator orientation="vertical" className="h-6" />
+            
+            <SessionDownload 
+              sessionFiles={sessionFiles}
+              onRefreshFiles={fetchSessionFiles}
+            />
             
             <Button
               variant="outline"
