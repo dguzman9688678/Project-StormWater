@@ -53,7 +53,7 @@ export default function ProfessionalMainPage() {
   const { data: stats } = useQuery({
     queryKey: ["/api/stats"],
     queryFn: api.getStats,
-    refetchInterval: 30000,
+    refetchInterval: 120000, // Reduced from 30s to 2 minutes for better performance
   });
 
   // Analysis mutation
