@@ -21,6 +21,7 @@ import { WorkbenchPanel } from "@/components/workbench-panel";
 import { AnalysisPreview } from "@/components/analysis-preview";
 import { EnhancedSearch } from "@/components/enhanced-search-complete";
 import { SessionDownload } from "@/components/session-download";
+import { PluginEcosystemDashboard } from "@/components/plugin-ecosystem-dashboard";
 
 interface AnalysisResult {
   document: any;
