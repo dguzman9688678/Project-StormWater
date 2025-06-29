@@ -174,7 +174,7 @@ export function WorkbenchPanel({
               onChange={handleFileInput}
               className="hidden"
               id="file-upload"
-              accept=".pdf,.docx,.doc,.txt,.xlsx,.xls,.csv,.json,.xml,.rtf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.html,.htm,.md,.log"
+              accept=".pdf,.docx,.doc,.txt,.xlsx,.xls,.csv,.json,.xml,.rtf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.heic,.heif,.html,.htm,.md,.log"
             />
             <Button
               type="button"

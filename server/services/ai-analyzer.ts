@@ -39,7 +39,7 @@ export class AIAnalyzer {
       const { storage } = await import('../storage');
       const allDocuments = await storage.getAllDocuments();
       
-      const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(document.originalName);
+      const isImage = /\.(jpg|jpeg|png|gif|bmp|webp|heic|heif)$/i.test(document.originalName);
       
       if (isImage) {
         return await this.analyzeImageWithContext(document, allDocuments, query);

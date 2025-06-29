@@ -433,7 +433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // For images, include base64 data for chat analysis
           let imageData = null;
           const fileExtension = tempDocument.originalName.toLowerCase();
-          const isImage = fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif') || fileExtension.includes('.bmp') || fileExtension.includes('.webp');
+          const isImage = fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif') || fileExtension.includes('.bmp') || fileExtension.includes('.webp') || fileExtension.includes('.heic') || fileExtension.includes('.heif');
           
           if (isImage && tempDocument.filePath) {
             try {
@@ -1081,7 +1081,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let currentDocContext = '';
       if (currentDocument) {
         const fileExtension = currentDocument.originalName.toLowerCase();
-        const isImage = fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif') || fileExtension.includes('.bmp') || fileExtension.includes('.webp');
+        const isImage = fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif') || fileExtension.includes('.bmp') || fileExtension.includes('.webp') || fileExtension.includes('.heic') || fileExtension.includes('.heif');
         
         if (isImage && (currentDocument.filePath || currentDocument.imageData)) {
           // For images, we need to handle visual analysis by sending the actual image

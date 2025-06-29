@@ -54,6 +54,8 @@ export class DocumentProcessor {
         case '.gif':
         case '.bmp':
         case '.webp':
+        case '.heic':
+        case '.heif':
           content = await this.processImageFile(filePath, originalName);
           break;
         case '.html':
@@ -68,7 +70,7 @@ export class DocumentProcessor {
           content = await this.processLogFile(filePath);
           break;
         default:
-          throw new Error(`Unsupported file type: ${fileExtension}. Supported formats: .txt, .pdf, .docx, .doc, .xlsx, .xls, .csv, .json, .xml, .rtf, .jpg, .jpeg, .png, .gif, .bmp, .webp, .html, .htm, .md, .markdown, .log`);
+          throw new Error(`Unsupported file type: ${fileExtension}. Supported formats: .txt, .pdf, .docx, .doc, .xlsx, .xls, .csv, .json, .xml, .rtf, .jpg, .jpeg, .png, .gif, .bmp, .webp, .heic, .heif, .html, .htm, .md, .markdown, .log`);
       }
 
       const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
