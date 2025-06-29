@@ -12,6 +12,8 @@ import { ChatService } from "./services/chat-service";
 import { WebSearchService } from "./services/web-search-service";
 import { PythonInterpreter } from "./services/python-interpreter";
 import archiver from "archiver";
+import { pluginRegistry } from "./plugin-system/plugin-registry";
+import { pluginManager } from "./plugin-system/plugin-manager";
 
 import { insertDocumentSchema, insertAiAnalysisSchema } from "@shared/schema";
 
@@ -263,6 +265,9 @@ print("="*70)
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize AI Plugin Ecosystem
+  await pluginRegistry.initializeAllPlugins();
+  
   // Initialize with template recommendations
   await recommendationGenerator.generateTemplateRecommendations();
 
@@ -1785,6 +1790,68 @@ ${docType === 'sop' ? 'Standard Operating Procedure: Include step-by-step proced
     } catch (error) {
       console.error('Delete document error:', error);
       res.status(500).json({ error: "Failed to delete document" });
+    }
+  });
+
+  // Plugin System API Routes
+  app.get("/api/plugins", async (req, res) => {
+    try {
+      const systemStatus = pluginRegistry.getSystemStatus();
+      res.json(systemStatus);
+    } catch (error) {
+      console.error('Plugin system status error:', error);
+      res.status(500).json({ error: "Failed to get plugin status" });
+    }
+  });
+
+  app.get("/api/plugins/:pluginId/status", async (req, res) => {
+    try {
+      const { pluginId } = req.params;
+      const status = pluginManager.getPluginStatus(pluginId);
+      
+      if (!status) {
+        return res.status(404).json({ error: "Plugin not found" });
+      }
+      
+      res.json(status);
+    } catch (error) {
+      console.error('Plugin status error:', error);
+      res.status(500).json({ error: "Failed to get plugin status" });
+    }
+  });
+
+  app.post("/api/plugins/process", async (req, res) => {
+    try {
+      const { type, data, priority = 'normal', timeout = 30000 } = req.body;
+      
+      if (!type || !data) {
+        return res.status(400).json({ error: "Request type and data are required" });
+      }
+
+      const result = await pluginManager.processRequest({
+        type,
+        data,
+        priority,
+        timeout
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Plugin processing error:', error);
+      res.status(500).json({ 
+        error: "Plugin processing failed",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get("/api/plugins/resources", async (req, res) => {
+    try {
+      const resources = pluginManager.getSystemResources();
+      res.json(resources);
+    } catch (error) {
+      console.error('Plugin resources error:', error);
+      res.status(500).json({ error: "Failed to get plugin resources" });
     }
   });
 
