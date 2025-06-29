@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { FileText, Shield, ClipboardList, MapPin, ScrollText, AlertTriangle, Users, Wrench, Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DownloadHelper } from "@/components/download-helper";
@@ -90,6 +91,8 @@ export function DocumentGenerationChecklist({
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const [hasGenerated, setHasGenerated] = useState(false);
   const [generatedDocuments, setGeneratedDocuments] = useState<Array<{id: number; originalName: string; type: string}>>([]);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [currentlyGenerating, setCurrentlyGenerating] = useState<string>('');
   const { toast } = useToast();
 
   const handleDocumentToggle = (documentId: string) => {
@@ -317,6 +320,30 @@ export function DocumentGenerationChecklist({
             )}
           </Button>
         </div>
+
+        {/* Progress Indicator */}
+        {(isGenerating || currentlyGenerating) && (
+          <div className="space-y-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border">
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+              <span className="text-sm font-medium">
+                {currentlyGenerating ? `Generating: ${currentlyGenerating}` : 'Processing document generation...'}
+              </span>
+            </div>
+            {generationProgress > 0 && (
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Progress</span>
+                  <span>{Math.round(generationProgress)}%</span>
+                </div>
+                <Progress value={generationProgress} className="h-2" />
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Creating professional documents with proper citations and formatting. This may take a few moments.
+            </p>
+          </div>
+        )}
 
         {/* Generated Documents Download Section */}
         {hasGenerated && generatedDocuments.length > 0 && (

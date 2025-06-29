@@ -368,6 +368,8 @@ QSD/CPESC RECOMMENDATION: [Professional BMP Title] - [Complete implementation pa
 
 **COST ANALYSIS (AUTHENTIC SOURCES ONLY):**
 - ONLY provide dollar amounts if they are directly sourced from reference documents OR user-provided cost data
+- If no cost data is available, state "Cost data not available - user should provide site-specific budget information"
+- Always cite the exact source of any dollar amounts (e.g., "Reference: BMP Handbook Chapter 4, Section 2.3")
 - For ANY cost mentioned, include specific document citation [DOC-X] or "User-provided cost data"
 - If user has provided cost data in their description, you may reference and use those specific amounts
 - If no cost data exists in reference documents OR user input, state "Cost data not available in reference library"
@@ -431,7 +433,8 @@ Always cite specific documents, sections, and standards from the provided librar
     const referenceContext = referenceDocs.map((doc, index) => {
       // Include more content for better analysis - this is critical for document referencing
       const preview = doc.content.substring(0, 1500); // Increased from 500 to 1500 for better context
-      return `[DOC-${index + 1}] "${doc.originalName}" (${doc.category})
+      const docName = doc.originalName || `Document-${index + 1}`;
+      return `[REFERENCE: "${docName}"] (${doc.category})
 FILE SIZE: ${(doc.content.length / 1024).toFixed(1)}KB
 CONTENT EXTRACT: ${preview}${doc.content.length > 1500 ? '...[FULL DOCUMENT AVAILABLE]' : ''}
 ---`;

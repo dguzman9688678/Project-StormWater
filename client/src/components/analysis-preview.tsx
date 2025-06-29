@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, Copy, FileText, Check, Share, Save, Eye, Maximize2 } from "lucide-react";
+import { Download, Copy, FileText, Check, Share, Save, Eye, Maximize2, Loader2, Code, Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentGenerationChecklist } from "@/components/document-generation-checklist";
+import { PythonInterpreter } from "@/components/python-interpreter";
 
 interface AnalysisPreviewProps {
   analysisResult: {
@@ -279,10 +280,16 @@ ${i + 1}. ${rec.title}
       
       <CardContent className="flex-1 min-h-0">
         <Tabs defaultValue="analysis" className="h-full flex flex-col">
-          <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
+          <TabsList className={`grid w-full ${analysisResult.recommendations.length > 0 ? 'grid-cols-5' : 'grid-cols-4'} flex-shrink-0`}>
             <TabsTrigger value="analysis">Analysis</TabsTrigger>
-            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+            {analysisResult.recommendations.length > 0 && (
+              <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+            )}
             <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="python" className="flex items-center gap-1">
+              <Code className="w-3 h-3" />
+              Python
+            </TabsTrigger>
             <TabsTrigger value="formatted">Export</TabsTrigger>
           </TabsList>
           
@@ -374,6 +381,10 @@ ${i + 1}. ${rec.title}
                 }}
               />
             </ScrollArea>
+          </TabsContent>
+          
+          <TabsContent value="python" className="flex-1 min-h-0 mt-4">
+            <PythonInterpreter className="h-full" />
           </TabsContent>
           
           <TabsContent value="formatted" className="flex-1 min-h-0 mt-4">

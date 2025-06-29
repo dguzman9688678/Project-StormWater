@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Upload, FileText, Brain, Loader2, Plus, X, MessageSquare, Send, Code, Calculator } from "lucide-react";
+import { Upload, FileText, Brain, Loader2, Plus, X, MessageSquare, Send, Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { PythonInterpreter } from "@/components/python-interpreter";
+
 
 
 interface WorkbenchPanelProps {
@@ -29,6 +29,8 @@ interface SiteMeasurements {
   slopePercent?: number;
   flowLengthFt?: number;
   culvertDiameterInches?: number;
+  widthFt?: number;
+  depthFt?: number;
   rainfallInches?: number;
   landUse: {
     residential?: number;
@@ -297,10 +299,7 @@ export function WorkbenchPanel({
                 <MessageSquare className="w-4 h-4" />
                 Chat
               </TabsTrigger>
-              <TabsTrigger value="python" className="flex items-center gap-1">
-                <Code className="w-4 h-4" />
-                Python
-              </TabsTrigger>
+
             </TabsList>
             
             <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 mt-3">
@@ -357,9 +356,7 @@ export function WorkbenchPanel({
               </div>
             </TabsContent>
             
-            <TabsContent value="python" className="flex-1 min-h-0 mt-3">
-              <PythonInterpreter className="h-full" />
-            </TabsContent>
+
           </Tabs>
         </CardContent>
       </Card>
@@ -434,6 +431,38 @@ export function WorkbenchPanel({
                       onChange={(e) => setSiteMeasurements(prev => ({
                         ...prev,
                         culvertDiameterInches: e.target.value ? parseFloat(e.target.value) : undefined
+                      }))}
+                    />
+                  </div>
+                </div>
+
+                {/* Width and Depth */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="width">Width (feet)</Label>
+                    <Input
+                      id="width"
+                      type="number"
+                      step="0.1"
+                      placeholder="50.0"
+                      value={siteMeasurements.widthFt || ''}
+                      onChange={(e) => setSiteMeasurements(prev => ({
+                        ...prev,
+                        widthFt: e.target.value ? parseFloat(e.target.value) : undefined
+                      }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="depth">Depth (feet)</Label>
+                    <Input
+                      id="depth"
+                      type="number"
+                      step="0.1"
+                      placeholder="8.0"
+                      value={siteMeasurements.depthFt || ''}
+                      onChange={(e) => setSiteMeasurements(prev => ({
+                        ...prev,
+                        depthFt: e.target.value ? parseFloat(e.target.value) : undefined
                       }))}
                     />
                   </div>

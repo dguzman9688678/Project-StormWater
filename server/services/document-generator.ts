@@ -365,17 +365,27 @@ ${rec.content}
 
 **Project:** ${query || 'Stormwater management documentation'}
 
-**Library (${sourceDocuments.length} docs - CITE ALL with [DOC-X]):**
+**Reference Library (${sourceDocuments.length} documents - use real document names not DOC-#):**
 ${documentContext}
 
-**Requirements:**
-1. Reference ALL ${sourceDocuments.length} documents with [DOC-X] citations
-2. Professional format with headers and sections
-3. Technical specifications and compliance requirements
-4. Implementation procedures and safety protocols
-5. Regulatory compliance and best practices
+**CRITICAL REQUIREMENTS:**
+1. Write in natural, professional language - avoid bulleted repetition
+2. Use real document names from library, not "DOC-#" format
+3. Vary sentence structure and avoid repetitive phrasing
+4. Include specific chapters/sections when citing (e.g., "BMP Handbook Chapter 4, Section 2.3")
+5. Create flowing paragraphs with proper transitions
+6. Avoid duplicating the same information multiple times
+7. Use professional engineering language with technical depth
 
-Create a complete professional document for actual project use.`;
+**Document Structure:**
+- Executive Summary (natural paragraph format)
+- Site Assessment (flowing narrative with technical details)
+- Implementation Plan (clear sequential steps without repetition)
+- Technical Specifications (detailed but readable)
+- Maintenance Requirements (practical guidance)
+- Regulatory Compliance (specific citations with chapter/section)
+
+Create a polished, professional document that reads naturally and avoids repetitive content.`;
 
     try {
       // Use AI analyzer to generate comprehensive document with all library references
