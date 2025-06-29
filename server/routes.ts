@@ -770,45 +770,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get local results first
       const localResults = await storage.globalSearch(query);
       
-      // Enhanced Claude 4 analysis with thinking mode
+      // Enhanced Claude 4 analysis with thinking mode - integrates with existing analysis system
       const aiAnalyzer = new AIAnalyzer();
       let insights = '';
       
       if (includeContext && localResults.documents.length > 0) {
-        const analysisPrompt = `<thinking>
-        The user is searching for "${query}" in their stormwater management system.
+        // Use the same analysis approach as document analysis but for search context
+        const searchAnalysisPrompt = `<thinking>
+        The user is searching for "${query}" in their professional stormwater management system.
         
-        Available documents: ${localResults.documents.length}
-        Available recommendations: ${localResults.recommendations.length}
-        Available analyses: ${localResults.analyses.length}
+        Context:
+        - Available documents: ${localResults.documents.length}
+        - Available recommendations: ${localResults.recommendations.length}
+        - Available analyses: ${localResults.analyses.length}
         
-        I need to provide comprehensive insights that connect:
-        1. The search query intent
-        2. Available documents and their relevance
-        3. Regulatory compliance implications
-        4. Practical implementation guidance
-        5. Cross-references between documents
+        As a QSD/CPESC professional, I need to:
+        1. Understand the search intent and regulatory implications
+        2. Cross-reference relevant documents for comprehensive guidance
+        3. Provide actionable professional recommendations
+        4. Identify compliance requirements and implementation steps
+        5. Assess risks and mitigation strategies
         
-        This should be professional QSD/CPESC level analysis.
+        This search analysis should integrate with the broader document analysis system.
         </thinking>
         
-        Analyze the search query "${query}" in the context of stormwater management. 
+        You are a Qualified SWPPP Developer (QSD) and Certified Professional in Erosion and Sediment Control (CPESC). 
         
-        Available resources:
+        Analyze the search query "${query}" in context of these available stormwater management resources:
+        
+        **Available Documents:**
         ${localResults.documents.map(doc => `- ${doc.originalName}: ${doc.content?.substring(0, 200)}...`).join('\n')}
         
-        Provide professional QSD/CPESC level insights including:
-        1. Regulatory compliance considerations
-        2. Implementation best practices
-        3. Cross-document connections
-        4. Risk assessment factors
-        5. Recommended next steps`;
+        **Previous Recommendations:**
+        ${localResults.recommendations.map(rec => `- ${rec.title}: ${rec.content?.substring(0, 150)}...`).join('\n')}
+        
+        **Previous Analyses:**
+        ${localResults.analyses.map(analysis => `- Query: ${analysis.query} | Analysis: ${analysis.analysis?.substring(0, 150)}...`).join('\n')}
+        
+        Provide professional analysis including:
+        
+        ## Regulatory Compliance
+        - Applicable regulations and standards
+        - Compliance requirements and deadlines
+        - Permit considerations
+        
+        ## Implementation Guidance
+        - Best management practices (BMPs)
+        - Technical specifications
+        - Installation and maintenance requirements
+        
+        ## Risk Assessment
+        - Potential failure modes
+        - Environmental impacts
+        - Mitigation strategies
+        
+        ## Cross-Document Connections
+        - Related documents and sections
+        - Conflicting or complementary guidance
+        - Missing information needs
+        
+        ## Recommended Actions
+        - Immediate next steps
+        - Timeline considerations
+        - Resource requirements`;
         
         try {
-          insights = await aiAnalyzer.generateDocument(analysisPrompt);
+          insights = await aiAnalyzer.generateDocument(searchAnalysisPrompt);
+          
+          // Save this search analysis for future reference
+          if (insights && localResults.documents.length > 0) {
+            try {
+              await storage.createAiAnalysis({
+                documentId: localResults.documents[0].id,
+                query: `Search Analysis: ${query}`,
+                analysis: insights,
+                insights: [`Search performed for: ${query}`, `Found ${localResults.documents.length} documents`, `Claude 4 enhanced analysis completed`]
+              });
+            } catch (saveError) {
+              console.log('Note: Could not save search analysis to database');
+            }
+          }
         } catch (error) {
-          insights = `Search completed for "${query}". Found ${localResults.documents.length} documents and ${localResults.recommendations.length} recommendations. Consider reviewing regulatory compliance requirements and implementation best practices.`;
+          console.error('Claude 4 analysis error:', error);
+          insights = `Professional search analysis for "${query}":
+
+Found ${localResults.documents.length} documents and ${localResults.recommendations.length} recommendations in your stormwater library.
+
+## Quick Assessment
+- Review documents for regulatory compliance requirements
+- Check for applicable BMP specifications and standards
+- Verify implementation timelines and permit requirements
+- Consider environmental protection measures
+
+## Recommended Actions
+1. Review most relevant documents identified in search results
+2. Cross-reference with current project requirements
+3. Consult latest regulatory guidance for compliance
+4. Develop implementation timeline with QSD/CPESC oversight
+
+For detailed professional analysis, please ensure Claude 4 API access is properly configured.`;
         }
+      } else {
+        insights = `Search completed for "${query}". Found ${localResults.documents.length} documents. Use Claude 4 Enhanced mode for comprehensive professional analysis.`;
       }
 
       // Format results for Claude 4 enhanced display
