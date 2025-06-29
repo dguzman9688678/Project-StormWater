@@ -23,6 +23,24 @@ interface WorkbenchPanelProps {
   uploadProgress: Record<string, number>;
 }
 
+interface SiteMeasurements {
+  totalAreaAcres?: number;
+  slopePercent?: number;
+  flowLengthFt?: number;
+  culvertDiameterInches?: number;
+  rainfallInches?: number;
+  landUse: {
+    residential?: number;
+    commercial?: number;
+    industrial?: number;
+    paved?: number;
+    forest?: number;
+  };
+  soilType?: 'A' | 'B' | 'C' | 'D';
+  stormFrequency?: '2-year' | '10-year' | '25-year' | '100-year';
+  location?: 'california_northern' | 'california_central' | 'california_southern';
+}
+
 export function WorkbenchPanel({
   files,
   setFiles,
@@ -36,6 +54,13 @@ export function WorkbenchPanel({
   const [aiChat, setAiChat] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
   const [chatInput, setChatInput] = useState("");
   const [isChatting, setIsChatting] = useState(false);
+  const [showMeasurements, setShowMeasurements] = useState(false);
+  const [siteMeasurements, setSiteMeasurements] = useState<SiteMeasurements>({
+    landUse: {},
+    soilType: 'B',
+    stormFrequency: '10-year',
+    location: 'california_central'
+  });
   const { toast } = useToast();
 
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -191,6 +216,25 @@ export function WorkbenchPanel({
             </div>
           )}
 
+          {/* Site Measurements Button */}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowMeasurements(true)}
+              className="flex-1"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Site Measurements
+            </Button>
+            {(siteMeasurements.totalAreaAcres || siteMeasurements.slopePercent || Object.values(siteMeasurements.landUse).some(v => v)) && (
+              <Badge variant="secondary" className="px-2 py-1 text-xs">
+                Measurements Added
+              </Badge>
+            )}
+          </div>
+
           {/* Problem Description */}
           <div className="space-y-2">
             <Label htmlFor="description">Problem Description:</Label>
@@ -308,6 +352,320 @@ export function WorkbenchPanel({
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Site Measurements Dialog */}
+      {showMeasurements && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Site Measurements & Parameters</h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowMeasurements(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Site Area */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="totalArea">Total Site Area (acres)</Label>
+                    <Input
+                      id="totalArea"
+                      type="number"
+                      step="0.1"
+                      placeholder="25.0"
+                      value={siteMeasurements.totalAreaAcres || ''}
+                      onChange={(e) => setSiteMeasurements(prev => ({
+                        ...prev,
+                        totalAreaAcres: e.target.value ? parseFloat(e.target.value) : undefined
+                      }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="slope">Average Slope (%)</Label>
+                    <Input
+                      id="slope"
+                      type="number"
+                      step="0.1"
+                      placeholder="3.0"
+                      value={siteMeasurements.slopePercent || ''}
+                      onChange={(e) => setSiteMeasurements(prev => ({
+                        ...prev,
+                        slopePercent: e.target.value ? parseFloat(e.target.value) : undefined
+                      }))}
+                    />
+                  </div>
+                </div>
+
+                {/* Flow Length and Culvert */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="flowLength">Flow Length (feet)</Label>
+                    <Input
+                      id="flowLength"
+                      type="number"
+                      placeholder="1200"
+                      value={siteMeasurements.flowLengthFt || ''}
+                      onChange={(e) => setSiteMeasurements(prev => ({
+                        ...prev,
+                        flowLengthFt: e.target.value ? parseFloat(e.target.value) : undefined
+                      }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="culvertDiameter">Culvert Diameter (inches)</Label>
+                    <Input
+                      id="culvertDiameter"
+                      type="number"
+                      placeholder="36"
+                      value={siteMeasurements.culvertDiameterInches || ''}
+                      onChange={(e) => setSiteMeasurements(prev => ({
+                        ...prev,
+                        culvertDiameterInches: e.target.value ? parseFloat(e.target.value) : undefined
+                      }))}
+                    />
+                  </div>
+                </div>
+
+                {/* Land Use Breakdown */}
+                <div>
+                  <Label className="text-base font-medium">Land Use Breakdown (acres)</Label>
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    <div>
+                      <Label htmlFor="residential" className="text-sm">Residential</Label>
+                      <Input
+                        id="residential"
+                        type="number"
+                        step="0.1"
+                        placeholder="0"
+                        value={siteMeasurements.landUse.residential || ''}
+                        onChange={(e) => setSiteMeasurements(prev => ({
+                          ...prev,
+                          landUse: {
+                            ...prev.landUse,
+                            residential: e.target.value ? parseFloat(e.target.value) : undefined
+                          }
+                        }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="commercial" className="text-sm">Commercial</Label>
+                      <Input
+                        id="commercial"
+                        type="number"
+                        step="0.1"
+                        placeholder="0"
+                        value={siteMeasurements.landUse.commercial || ''}
+                        onChange={(e) => setSiteMeasurements(prev => ({
+                          ...prev,
+                          landUse: {
+                            ...prev.landUse,
+                            commercial: e.target.value ? parseFloat(e.target.value) : undefined
+                          }
+                        }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="industrial" className="text-sm">Industrial</Label>
+                      <Input
+                        id="industrial"
+                        type="number"
+                        step="0.1"
+                        placeholder="0"
+                        value={siteMeasurements.landUse.industrial || ''}
+                        onChange={(e) => setSiteMeasurements(prev => ({
+                          ...prev,
+                          landUse: {
+                            ...prev.landUse,
+                            industrial: e.target.value ? parseFloat(e.target.value) : undefined
+                          }
+                        }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="paved" className="text-sm">Paved Areas</Label>
+                      <Input
+                        id="paved"
+                        type="number"
+                        step="0.1"
+                        placeholder="0"
+                        value={siteMeasurements.landUse.paved || ''}
+                        onChange={(e) => setSiteMeasurements(prev => ({
+                          ...prev,
+                          landUse: {
+                            ...prev.landUse,
+                            paved: e.target.value ? parseFloat(e.target.value) : undefined
+                          }
+                        }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="forest" className="text-sm">Forest/Open Space</Label>
+                      <Input
+                        id="forest"
+                        type="number"
+                        step="0.1"
+                        placeholder="0"
+                        value={siteMeasurements.landUse.forest || ''}
+                        onChange={(e) => setSiteMeasurements(prev => ({
+                          ...prev,
+                          landUse: {
+                            ...prev.landUse,
+                            forest: e.target.value ? parseFloat(e.target.value) : undefined
+                          }
+                        }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Engineering Parameters */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="soilType">Soil Type (Hydrologic Group)</Label>
+                    <select
+                      id="soilType"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={siteMeasurements.soilType}
+                      onChange={(e) => setSiteMeasurements(prev => ({
+                        ...prev,
+                        soilType: e.target.value as 'A' | 'B' | 'C' | 'D'
+                      }))}
+                    >
+                      <option value="A">A - Well Drained (Sand, Gravel)</option>
+                      <option value="B">B - Moderate Infiltration (Silt Loam)</option>
+                      <option value="C">C - Slow Infiltration (Clay Loam)</option>
+                      <option value="D">D - Very Slow Infiltration (Clay)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="stormFreq">Design Storm Frequency</Label>
+                    <select
+                      id="stormFreq"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={siteMeasurements.stormFrequency}
+                      onChange={(e) => setSiteMeasurements(prev => ({
+                        ...prev,
+                        stormFrequency: e.target.value as '2-year' | '10-year' | '25-year' | '100-year'
+                      }))}
+                    >
+                      <option value="2-year">2-Year Storm</option>
+                      <option value="10-year">10-Year Storm</option>
+                      <option value="25-year">25-Year Storm</option>
+                      <option value="100-year">100-Year Storm</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Location and Rainfall */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="location">California Region</Label>
+                    <select
+                      id="location"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={siteMeasurements.location}
+                      onChange={(e) => setSiteMeasurements(prev => ({
+                        ...prev,
+                        location: e.target.value as 'california_northern' | 'california_central' | 'california_southern'
+                      }))}
+                    >
+                      <option value="california_northern">Northern California</option>
+                      <option value="california_central">Central California</option>
+                      <option value="california_southern">Southern California</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="rainfall">Custom Rainfall (inches)</Label>
+                    <Input
+                      id="rainfall"
+                      type="number"
+                      step="0.1"
+                      placeholder="Auto from IDF curves"
+                      value={siteMeasurements.rainfallInches || ''}
+                      onChange={(e) => setSiteMeasurements(prev => ({
+                        ...prev,
+                        rainfallInches: e.target.value ? parseFloat(e.target.value) : undefined
+                      }))}
+                    />
+                  </div>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    onClick={() => {
+                      // Add measurements to description
+                      const measurementsText = generateMeasurementsText();
+                      const currentDesc = description;
+                      const newDesc = currentDesc ? `${currentDesc}\n\n${measurementsText}` : measurementsText;
+                      setDescription(newDesc);
+                      setShowMeasurements(false);
+                      toast({
+                        title: "Measurements Added",
+                        description: "Site measurements added for precise engineering calculations."
+                      });
+                    }}
+                    className="flex-1"
+                  >
+                    Add to Analysis
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSiteMeasurements({
+                        landUse: {},
+                        soilType: 'B',
+                        stormFrequency: '10-year',
+                        location: 'california_central'
+                      });
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+
+  // Helper function to generate measurements text
+  function generateMeasurementsText() {
+    const parts = [];
+    
+    if (siteMeasurements.totalAreaAcres) {
+      parts.push(`Total site area: ${siteMeasurements.totalAreaAcres} acres`);
+    }
+    
+    if (siteMeasurements.slopePercent) {
+      parts.push(`Site slope: ${siteMeasurements.slopePercent}%`);
+    }
+    
+    if (siteMeasurements.flowLengthFt) {
+      parts.push(`Flow length: ${siteMeasurements.flowLengthFt} feet`);
+    }
+    
+    if (siteMeasurements.culvertDiameterInches) {
+      parts.push(`Culvert diameter: ${siteMeasurements.culvertDiameterInches} inches`);
+    }
+    
+    if (siteMeasurements.rainfallInches) {
+      parts.push(`Design rainfall: ${siteMeasurements.rainfallInches} inches`);
+    }
+    
+    const landUseEntries = Object.entries(siteMeasurements.landUse).filter(([_, value]) => value && value > 0);
+    if (landUseEntries.length > 0) {
+      parts.push(`Land use breakdown: ${landUseEntries.map(([type, acres]) => `${type} ${acres} acres`).join(', ')}`);
+    }
+    
+    parts.push(`Soil type: ${siteMeasurements.soilType} (Hydrologic Soil Group)`);
+    parts.push(`Design storm: ${siteMeasurements.stormFrequency}`);
+    parts.push(`Location: ${siteMeasurements.location?.replace(/_/g, ' ')}`);
+    
+    return `**SITE MEASUREMENTS FOR ENGINEERING CALCULATIONS:**\n${parts.join('\n')}`;
+  }
 }

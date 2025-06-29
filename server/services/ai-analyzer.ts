@@ -294,18 +294,32 @@ Use Extended Thinking Mode to systematically evaluate:
 - Which recommendations offer the best cost-benefit ratio?
 </thinking>
 
-**PROFESSIONAL QSD/CPESC ASSESSMENT PROTOCOL:**
-Apply your professional expertise to evaluate this site/document against industry standards. Cross-reference ALL library documents to provide consultant-level recommendations:
+**CRITICAL: COMPREHENSIVE DOCUMENT ANALYSIS & CITATION REQUIREMENTS:**
 
-1. **Regulatory Compliance Assessment**: Evaluate against CGP requirements, NPDES permits, state/local regulations from reference documents
-2. **Site-Specific BMP Selection**: Recommend appropriate BMPs based on site conditions, soil types, slopes, and drainage patterns  
-3. **Implementation Specifications**: Provide detailed installation standards, material specs, and construction sequencing
-4. **Professional Risk Assessment**: Identify potential failure modes, environmental impacts, and liability concerns
-5. **Inspection and Maintenance Protocols**: Define professional inspection schedules, performance monitoring, and maintenance requirements
-6. **Cost-Benefit Analysis**: Balance compliance requirements with practical implementation costs and timelines
-7. **Documentation Requirements**: Address SWPPP updates, inspection forms, and regulatory reporting needs
+You MUST analyze and reference ALL documents in the library above. This is essential for providing complete stormwater solutions.
+
+**MANDATORY CITATION PROTOCOL:**
+- Reference specific documents using [DOC-X] format (e.g., [DOC-1], [DOC-2])
+- Quote relevant sections from multiple documents
+- Cross-reference between documents for comprehensive solutions
+- Identify which documents contain specific technical requirements
+- Note any conflicting information between documents
+
+**PROFESSIONAL QSD/CPESC ASSESSMENT PROTOCOL:**
+Apply your professional expertise to evaluate this site/document against industry standards. You MUST cross-reference ALL library documents to provide consultant-level recommendations:
+
+1. **Regulatory Compliance Assessment**: Evaluate against CGP requirements, NPDES permits, state/local regulations from reference documents - CITE SPECIFIC DOCUMENTS
+2. **Site-Specific BMP Selection**: Recommend appropriate BMPs based on site conditions, soil types, slopes, and drainage patterns - REFERENCE MULTIPLE DOCUMENTS  
+3. **Implementation Specifications**: Provide detailed installation standards, material specs, and construction sequencing - CITE TECHNICAL DOCUMENTS
+4. **Professional Risk Assessment**: Identify potential failure modes, environmental impacts, and liability concerns - REFERENCE SAFETY DOCUMENTS
+5. **Inspection and Maintenance Protocols**: Define professional inspection schedules, performance monitoring, and maintenance requirements - CITE MAINTENANCE STANDARDS
+6. **Cost-Benefit Analysis**: Balance compliance requirements with practical implementation costs and timelines - REFERENCE COST GUIDELINES
+7. **Documentation Requirements**: Address SWPPP updates, inspection forms, and regulatory reporting needs - CITE REGULATORY DOCUMENTS
 
 ${query ? `**Client Request**: ${query}` : ''}
+
+**DOCUMENT CROSS-REFERENCING REQUIREMENT:**
+Your analysis MUST demonstrate that you have reviewed and considered ALL reference documents above. Include specific citations and cross-references in your recommendations.
 
 **Provide Professional Consultant-Level Response:**
 PROFESSIONAL SITE ASSESSMENT: [Comprehensive evaluation with regulatory context and technical findings]
@@ -381,20 +395,24 @@ Always cite specific documents, sections, and standards from the provided librar
   }
 
   private buildReferenceContext(allDocuments: Document[]): string {
-    // Filter out the current document and build a context summary
+    // Include ALL documents for comprehensive analysis - this is critical for proper referencing
     const referenceDocs = allDocuments
       .filter(doc => doc.content && doc.content.length > 50) // Only include substantial documents
-      .slice(0, 20); // Limit to avoid token limits
+      .sort((a, b) => b.content.length - a.content.length); // Prioritize larger documents first
 
     if (referenceDocs.length === 0) {
       return "No reference documents available in the library.";
     }
 
+    console.log(`Building reference context from ${referenceDocs.length} documents for comprehensive analysis`);
+
+    // Create comprehensive reference with ALL documents for proper citations
     const referenceContext = referenceDocs.map((doc, index) => {
-      const preview = doc.content.substring(0, 500);
-      return `[${index + 1}] Document: "${doc.originalName}"
-Category: ${doc.category}
-Content Preview: ${preview}${doc.content.length > 500 ? '...' : ''}
+      // Include more content for better analysis - this is critical for document referencing
+      const preview = doc.content.substring(0, 1500); // Increased from 500 to 1500 for better context
+      return `[DOC-${index + 1}] "${doc.originalName}" (${doc.category})
+FILE SIZE: ${(doc.content.length / 1024).toFixed(1)}KB
+CONTENT EXTRACT: ${preview}${doc.content.length > 1500 ? '...[FULL DOCUMENT AVAILABLE]' : ''}
 ---`;
     }).join('\n');
 
