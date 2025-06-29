@@ -247,15 +247,15 @@ export default function ProfessionalMainPage() {
               <div className="hidden md:flex items-center space-x-2 lg:space-x-4 text-xs lg:text-sm text-muted-foreground">
                 <div className="flex items-center space-x-1">
                   <FileText className="h-3 w-3 lg:h-4 lg:w-4" />
-                  <span>Documents</span>
+                  <span>{stats.documentCount} Documents</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Brain className="h-3 w-3 lg:h-4 lg:w-4" />
-                  <span>Analysis</span>
+                  <span>{stats.analysisCount} Analyses</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <CheckCircle className="h-3 w-3 lg:h-4 lg:w-4" />
-                  <span>Tools</span>
+                  <span>{stats.recommendationCount} Tools</span>
                 </div>
               </div>
             )}

@@ -129,8 +129,20 @@ export function DocumentGenerationChecklist({
       return;
     }
 
+    setGenerationProgress(0);
+    setCurrentlyGenerating('Initializing document generation...');
+    
     try {
+      // Simulate progress updates during generation
+      const progressInterval = setInterval(() => {
+        setGenerationProgress(prev => Math.min(prev + 10, 90));
+      }, 500);
+
       const result = await onGenerate(selectedDocuments);
+      
+      clearInterval(progressInterval);
+      setGenerationProgress(100);
+      setCurrentlyGenerating('Generation complete!');
       setHasGenerated(true);
       
       // Extract generated document info from the result if available
@@ -147,7 +159,16 @@ export function DocumentGenerationChecklist({
         title: "Documents Generated Successfully", 
         description: `Generated ${selectedDocuments.length} professional documents. Download links available below.`,
       });
+      
+      // Reset progress after showing completion
+      setTimeout(() => {
+        setCurrentlyGenerating('');
+        setGenerationProgress(0);
+      }, 2000);
+      
     } catch (error) {
+      setGenerationProgress(0);
+      setCurrentlyGenerating('');
       toast({
         title: "Generation Failed",
         description: "Failed to generate documents. Please try again.",
