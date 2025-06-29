@@ -46,6 +46,7 @@ export default function ProfessionalMainPage() {
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [selectedDocument, setSelectedDocument] = useState<DocumentPreview | null>(null);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showPluginPanel, setShowPluginPanel] = useState(false);
   const [sessionFiles, setSessionFiles] = useState<any[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -290,6 +291,15 @@ export default function ProfessionalMainPage() {
               <Settings className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
               Admin
             </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPluginPanel(!showPluginPanel)}
+            >
+              <Brain className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
+              Plugins
+            </Button>
           </div>
         </div>
       </header>
@@ -326,6 +336,27 @@ export default function ProfessionalMainPage() {
           </div>
         </div>
       </div>
+
+      {/* Plugin Dashboard Modal */}
+      {showPluginPanel && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-semibold">AI Plugin Ecosystem</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPluginPanel(false)}
+              >
+                ×
+              </Button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[80vh]">
+              <PluginEcosystemDashboard />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
