@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { PythonInterpreter } from "@/components/python-interpreter";
-import { DocumentGenerationPrompt } from "@/components/document-generation-prompt";
+
 
 interface WorkbenchPanelProps {
   files: File[];
@@ -69,8 +69,7 @@ export function WorkbenchPanel({
     stormFrequency: '10-year',
     location: 'california_central'
   });
-  const [showDocumentGeneration, setShowDocumentGeneration] = useState(false);
-  const [currentProjectDescription, setCurrentProjectDescription] = useState("");
+
   const { toast } = useToast();
 
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -144,43 +143,7 @@ export function WorkbenchPanel({
     }
   };
 
-  const handleGenerateDocuments = async (selectedTypes: string[]) => {
-    try {
-      const response = await fetch('/api/documents/generate-professional', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          documentTypes: selectedTypes,
-          projectDescription: currentProjectDescription,
-          siteMeasurements: siteMeasurements
-        })
-      });
-      
-      if (!response.ok) throw new Error('Failed to generate documents');
-      
-      const data = await response.json();
-      
-      toast({
-        title: "Documents Generated Successfully",
-        description: `Generated ${selectedTypes.length} professional documents for your project.`,
-      });
-      
-      // Add generated documents to chat for user reference
-      setAiChat(prev => [...prev, { 
-        role: 'assistant', 
-        content: `✅ Successfully generated ${selectedTypes.length} professional documents:\n\n${selectedTypes.map(type => `• ${type.toUpperCase().replace('_', ' ')}`).join('\n')}\n\nAll documents include proper citations from your reference library and can be downloaded from the main interface.`
-      }]);
-      
-    } catch (error) {
-      throw error; // Re-throw for the prompt component to handle
-    }
-  };
 
-  // Function to trigger document generation prompt after analysis
-  const promptForDocumentGeneration = (projectDesc: string) => {
-    setCurrentProjectDescription(projectDesc);
-    setShowDocumentGeneration(true);
-  };
 
   return (
     <div className="space-y-4 h-full flex flex-col">
@@ -295,38 +258,25 @@ export function WorkbenchPanel({
             />
           </div>
 
-          {/* Analysis and Document Generation Buttons */}
-          <div className="flex gap-2">
-            <Button
-              onClick={onAnalyze}
-              disabled={files.length === 0 || isAnalyzing}
-              className="flex-1"
-              size="lg"
-            >
-              {isAnalyzing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Brain className="w-4 h-4 mr-2" />
-                  Analyze Documents
-                </>
-              )}
-            </Button>
-            
-            <Button
-              variant="outline"
-              onClick={() => promptForDocumentGeneration(description || "Stormwater analysis project")}
-              disabled={files.length === 0}
-              size="lg"
-              className="flex-shrink-0"
-            >
-              <FileText className="w-4 h-4 mr-1" />
-              Generate Documents
-            </Button>
-          </div>
+          {/* Analysis Button */}
+          <Button
+            onClick={onAnalyze}
+            disabled={files.length === 0 || isAnalyzing}
+            className="w-full"
+            size="lg"
+          >
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Brain className="w-4 h-4 mr-2" />
+                Analyze Documents
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
 
@@ -786,13 +736,7 @@ export function WorkbenchPanel({
         </div>
       )}
 
-      {/* Document Generation Prompt */}
-      <DocumentGenerationPrompt
-        projectDescription={currentProjectDescription}
-        onGenerateDocuments={handleGenerateDocuments}
-        isVisible={showDocumentGeneration}
-        onClose={() => setShowDocumentGeneration(false)}
-      />
+
     </div>
   );
 

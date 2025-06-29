@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { DocumentGenerationChecklist } from "@/components/document-generation-checklist";
 
 interface AnalysisPreviewProps {
   analysisResult: {
@@ -278,10 +279,11 @@ ${i + 1}. ${rec.title}
       
       <CardContent className="flex-1 min-h-0">
         <Tabs defaultValue="analysis" className="h-full flex flex-col">
-          <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
+          <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
             <TabsTrigger value="analysis">Analysis</TabsTrigger>
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
-            <TabsTrigger value="formatted">Formatted</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="formatted">Export</TabsTrigger>
           </TabsList>
           
           <TabsContent value="analysis" className="flex-1 min-h-0 mt-4">
@@ -336,6 +338,39 @@ ${i + 1}. ${rec.title}
                 />
               </ScrollArea>
             </div>
+          </TabsContent>
+
+          <TabsContent value="documents" className="flex-1 min-h-0 mt-4">
+            <ScrollArea className="h-full">
+              <DocumentGenerationChecklist 
+                projectDescription={analysisResult.document?.name || "Stormwater Analysis Project"}
+                onGenerate={async (selectedTypes) => {
+                  try {
+                    const response = await fetch('/api/documents/generate-professional', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        documentTypes: selectedTypes,
+                        projectDescription: analysisResult.document?.name || "Stormwater Analysis Project",
+                        siteMeasurements: {}
+                      })
+                    });
+                    
+                    if (!response.ok) throw new Error('Failed to generate documents');
+                    
+                    const data = await response.json();
+                    
+                    toast({
+                      title: "Documents Generated Successfully",
+                      description: `Generated ${selectedTypes.length} professional documents for your project.`,
+                    });
+                    
+                  } catch (error) {
+                    throw error;
+                  }
+                }}
+              />
+            </ScrollArea>
           </TabsContent>
           
           <TabsContent value="formatted" className="flex-1 min-h-0 mt-4">
