@@ -1,14 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
-import { Search, Globe, FileText, Sparkles, Loader2, ExternalLink, Filter } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useCallback } from 'react';
+import { Search, Loader2, Globe, FileText, Sparkles, Filter, ExternalLink } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useQuery } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 interface SearchResult {
   id: string;
@@ -55,9 +54,9 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
     enabled: debouncedQuery.length >= 2 && searchMode === 'local',
   });
 
-  // Enhanced web search with Claude 4
+  // Claude 4 Enhanced Web Search
   const performWebSearch = useCallback(async () => {
-    if (!debouncedQuery || debouncedQuery.length < 3) return;
+    if (!debouncedQuery || debouncedQuery.length < 2) return;
     
     setIsSearching(true);
     try {
@@ -66,106 +65,66 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           query: debouncedQuery,
-          context: 'stormwater engineering',
-          includeRegulations: true,
-          includeGuidance: true
+          useAI: true,
+          contextual: true,
+          claude4: true
         })
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Web search failed');
+      if (response.ok) {
+        const data = await response.json();
+        const formattedResults = data.results?.map((result: any, index: number) => ({
+          id: `web-${index}`,
+          title: result.title || 'Web Result',
+          content: result.snippet || result.content || 'No description available',
+          source: 'web' as const,
+          url: result.url,
+          relevance: result.relevance || 0.8
+        })) || [];
+        
+        setWebResults(formattedResults);
+        setAiInsights(data.analysis || 'Claude 4 enhanced web search completed');
       }
-      
-      const data = await response.json();
-      
-      // Format web results properly
-      const formattedWebResults = (data.results || []).map((result: any, index: number) => ({
-        id: `web-${index}`,
-        title: result.title || `Web Result ${index + 1}`,
-        content: result.description || result.content || "",
-        source: 'web' as const,
-        url: result.url,
-        relevance: result.relevance || 0.5
-      }));
-      
-      setWebResults(formattedWebResults);
-      setAiInsights(data.aiSummary || "");
-      
-    } catch (error: any) {
+    } catch (error) {
       console.error('Web search error:', error);
-      toast({
-        title: "Web Search Error",
-        description: error.message || "Failed to perform web search",
-        variant: "destructive",
-      });
-      setWebResults([]);
+      setAiInsights('Claude 4 web search temporarily unavailable');
     } finally {
       setIsSearching(false);
     }
-  }, [debouncedQuery, toast]);
+  }, [debouncedQuery]);
 
-  // AI-powered contextual search  
+  // Claude 4 AI Enhanced Search
   const performAISearch = useCallback(async () => {
-    if (!debouncedQuery || debouncedQuery.length < 3) return;
+    if (!debouncedQuery || debouncedQuery.length < 2) return;
     
     setIsSearching(true);
     try {
-      // Use regular search endpoint with AI enhancement flag
-      const response = await fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}&enhance=true`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'AI search failed');
-      }
-      
-      const data = await response.json();
-      
-      // Format AI results properly
-      const formattedResults: SearchResult[] = [
-        ...data.documents?.map((doc: any) => ({
-          id: `ai-doc-${doc.id}`,
-          title: doc.originalName || doc.filename,
-          content: doc.content?.substring(0, 300) + "...",
-          source: 'document' as const,
-          category: doc.category,
-          relevance: 0.9
-        })) || [],
-        ...data.recommendations?.map((rec: any) => ({
-          id: `ai-rec-${rec.id}`,
-          title: rec.title,
-          content: rec.content?.substring(0, 300) + "...",
-          source: 'recommendation' as const,
-          category: rec.category,
-          relevance: 0.8
-        })) || [],
-        ...data.analyses?.map((analysis: any) => ({
-          id: `ai-analysis-${analysis.id}`,
-          title: `Analysis: ${analysis.query}`,
-          content: analysis.analysis?.substring(0, 300) + "...",
-          source: 'analysis' as const,
-          relevance: 0.7
-        })) || []
-      ];
-      
-      setResults(formattedResults);
-      setAiInsights(`Found ${formattedResults.length} relevant results for "${debouncedQuery}"`);
-      
-    } catch (error: any) {
-      console.error('AI search error:', error);
-      toast({
-        title: "AI Search Error", 
-        description: error.message || "Failed to perform AI search",
-        variant: "destructive",
+      const response = await fetch('/api/search/claude4', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          query: debouncedQuery, 
+          mode: 'enhanced',
+          includeWeb: true,
+          includeContext: true,
+          useThinking: true
+        })
       });
-      setResults([]);
-      setAiInsights("");
+      
+      if (response.ok) {
+        const data = await response.json();
+        setResults(data.results || []);
+        setAiInsights(data.insights || 'Claude 4 enhanced search completed');
+      }
+    } catch (error) {
+      console.error('AI search error:', error);
+      setAiInsights('Claude 4 AI search temporarily unavailable');
     } finally {
       setIsSearching(false);
     }
-  }, [debouncedQuery, toast]);
+  }, [debouncedQuery]);
 
-  // Trigger searches based on mode
+  // Auto-trigger search based on mode
   useEffect(() => {
     if (debouncedQuery.length >= 2) {
       if (searchMode === 'web') {
@@ -180,29 +139,22 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
   useEffect(() => {
     if (searchMode === 'local' && localResults) {
       const formattedResults: SearchResult[] = [
-        ...localResults.documents?.map((doc: any) => ({
+        ...(localResults.documents?.map((doc: any) => ({
           id: `doc-${doc.id}`,
-          title: doc.originalName || doc.filename || 'Untitled Document',
+          title: doc.originalName || doc.filename || 'Document',
           content: (doc.content || doc.description || '').substring(0, 200) + "...",
           source: 'document' as const,
           category: doc.category || 'stormwater',
           relevance: 0.9
-        })) || [],
-        ...localResults.recommendations?.map((rec: any) => ({
+        })) || []),
+        ...(localResults.recommendations?.map((rec: any) => ({
           id: `rec-${rec.id}`,
-          title: rec.title || 'Untitled Recommendation',
+          title: rec.title || 'Recommendation',
           content: (rec.content || '').substring(0, 200) + "...",
           source: 'recommendation' as const,
           category: rec.category || 'stormwater',
           relevance: 0.8
-        })) || [],
-        ...localResults.analyses?.map((analysis: any) => ({
-          id: `analysis-${analysis.id}`,
-          title: `Analysis: ${analysis.query || 'Document Analysis'}`,
-          content: (analysis.analysis || '').substring(0, 200) + "...",
-          source: 'analysis' as const,
-          relevance: 0.7
-        })) || []
+        })) || [])
       ];
       setResults(formattedResults);
       setAiInsights(`Found ${formattedResults.length} local results`);
@@ -210,9 +162,11 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
   }, [localResults, searchMode]);
 
   const handleResultClick = (result: SearchResult) => {
-    onResultSelect?.(result);
     if (result.url) {
       window.open(result.url, '_blank');
+    }
+    if (onResultSelect) {
+      onResultSelect(result);
     }
   };
 
@@ -238,40 +192,39 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
   const isLoading = isLocalLoading || isSearching;
 
   return (
-    <div className={`${className}`}>
-      {/* Simple Search Input */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Search documents and recommendations..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="pl-10"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && query.trim().length >= 2) {
-              // Trigger search on Enter
-              if (searchMode === 'web') {
-                performWebSearch();
-              } else if (searchMode === 'ai') {
-                performAISearch();
+    <div className={`space-y-4 ${className}`}>
+      {/* Search Input */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search with Claude 4 enhanced capabilities..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="pl-10 pr-4"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && query.trim().length >= 2) {
+                if (searchMode === 'web') {
+                  performWebSearch();
+                } else if (searchMode === 'ai') {
+                  performAISearch();
+                }
               }
-              // Local search happens automatically via useQuery
-            }
-          }}
-        />
-        {isLoading && (
-          <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
-        )}
-      </div>
+            }}
+          />
+          {isLoading && (
+            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+          )}
+        </div>
         <Select value={searchMode} onValueChange={(value: 'local' | 'web' | 'ai') => setSearchMode(value)}>
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-40">
             <Filter className="w-4 h-4 mr-2" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="local">Local</SelectItem>
-            <SelectItem value="web">Web</SelectItem>
-            <SelectItem value="ai">AI Enhanced</SelectItem>
+            <SelectItem value="local">Local Search</SelectItem>
+            <SelectItem value="web">Claude 4 Web</SelectItem>
+            <SelectItem value="ai">Claude 4 Enhanced</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -287,7 +240,7 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
                     Results ({displayResults.length})
                   </TabsTrigger>
                   <TabsTrigger value="insights" disabled={!aiInsights}>
-                    AI Insights
+                    Claude 4 Insights
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -313,7 +266,7 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
                                 <Badge className={`text-xs ${getSourceColor(result.source)}`}>
                                   <span className="flex items-center gap-1">
                                     {getSourceIcon(result.source)}
-                                    {result.source}
+                                    {searchMode === 'ai' ? 'Claude 4' : result.source}
                                   </span>
                                 </Badge>
                                 {result.category && (
@@ -350,7 +303,7 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
                       <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                           <Sparkles className="w-4 h-4 text-blue-600" />
-                          <span className="font-medium text-sm">AI Analysis</span>
+                          <span className="font-medium text-sm">Claude 4 Enhanced Analysis</span>
                         </div>
                         <p className="text-sm whitespace-pre-wrap">{aiInsights}</p>
                       </div>
@@ -358,7 +311,7 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No AI insights available</p>
+                      <p className="text-sm">No Claude 4 insights available</p>
                     </div>
                   )}
                 </ScrollArea>

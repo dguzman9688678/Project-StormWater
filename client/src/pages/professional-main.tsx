@@ -19,7 +19,7 @@ import { AnalysisResults } from "@/components/analysis-results";
 import { AdminControls } from "@/components/admin-controls";
 import { WorkbenchPanel } from "@/components/workbench-panel";
 import { AnalysisPreview } from "@/components/analysis-preview";
-import { EnhancedSearch } from "@/components/enhanced-search-fixed";
+import { EnhancedSearch } from "@/components/enhanced-search-complete";
 import { SessionDownload } from "@/components/session-download";
 
 interface AnalysisResult {
