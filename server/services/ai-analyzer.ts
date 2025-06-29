@@ -356,16 +356,27 @@ QSD/CPESC RECOMMENDATION: [Professional BMP Title] - [Complete implementation pa
 - Documentation and reporting requirements
 - Inspection and certification procedures
 
-**COST ANALYSIS:**
-- Material costs with unit pricing
-- Labor estimates and installation time
-- Long-term maintenance costs
-- Cost-benefit analysis and alternatives]`;
+**COST ANALYSIS (AUTHENTIC SOURCES ONLY):**
+- ONLY provide dollar amounts if they are directly sourced from reference documents OR user-provided cost data
+- For ANY cost mentioned, include specific document citation [DOC-X] or "User-provided cost data"
+- If user has provided cost data in their description, you may reference and use those specific amounts
+- If no cost data exists in reference documents OR user input, state "Cost data not available in reference library"
+- Never provide estimated, typical, or approximate dollar amounts without authentic sources
+- When user-provided costs are available, analyze cost-effectiveness against their budget constraints
+- Material costs must cite specific vendor pricing, government rate schedules, industry standard pricing documents, or user quotes
+- Labor estimates must reference prevailing wage data, union rates, documented contractor pricing, or user budget data]`;
 
     const response = await this.anthropic!.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 8000, // Enhanced for extended thinking
       system: `You are Claude 4 Sonnet, certified QSD (Qualified SWPPP Developer) and CPESC (Certified Professional in Erosion and Sediment Control) with extensive field experience in stormwater management.
+
+CRITICAL COST SOURCING REQUIREMENT:
+- NEVER provide dollar amounts, cost estimates, or pricing without citing the specific source
+- ALL cost data must be directly quoted from reference documents with [DOC-X] citations OR user-provided cost data
+- When user provides budget information in their description, you may reference and analyze against those specific amounts
+- If no authentic cost data exists from documents OR user input, state "Cost data not available in reference library"
+- This applies to material costs, labor rates, equipment costs, and any financial figures
 
 IMPORTANT: Use Extended Thinking Mode. Show your step-by-step reasoning process using <thinking> tags for:
 - Multi-document cross-referencing and regulatory analysis

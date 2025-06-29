@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Upload, FileText, Brain, Loader2, Plus, X, MessageSquare, Send, Code } from "lucide-react";
+import { Upload, FileText, Brain, Loader2, Plus, X, MessageSquare, Send, Code, Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,13 @@ interface SiteMeasurements {
   soilType?: 'A' | 'B' | 'C' | 'D';
   stormFrequency?: '2-year' | '10-year' | '25-year' | '100-year';
   location?: 'california_northern' | 'california_central' | 'california_southern';
+  costData?: {
+    materialBudget?: number;
+    laborBudget?: number;
+    equipmentBudget?: number;
+    totalProjectBudget?: number;
+    costSource?: string;
+  };
 }
 
 export function WorkbenchPanel({
@@ -592,6 +599,100 @@ export function WorkbenchPanel({
                   </div>
                 </div>
 
+                {/* Cost Data Section */}
+                <div className="space-y-4 pt-4 border-t">
+                  <div className="flex items-center gap-2">
+                    <Calculator className="w-4 h-4 text-green-600" />
+                    <h4 className="font-medium">Project Cost Data (Optional)</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Provide your own cost data for authentic pricing analysis. Leave blank if not available.
+                  </p>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="materialBudget">Material Budget ($)</Label>
+                      <Input
+                        id="materialBudget"
+                        type="number"
+                        placeholder="0"
+                        value={siteMeasurements.costData?.materialBudget || ''}
+                        onChange={(e) => setSiteMeasurements(prev => ({
+                          ...prev,
+                          costData: {
+                            ...prev.costData,
+                            materialBudget: e.target.value ? parseFloat(e.target.value) : undefined
+                          }
+                        }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="laborBudget">Labor Budget ($)</Label>
+                      <Input
+                        id="laborBudget"
+                        type="number"
+                        placeholder="0"
+                        value={siteMeasurements.costData?.laborBudget || ''}
+                        onChange={(e) => setSiteMeasurements(prev => ({
+                          ...prev,
+                          costData: {
+                            ...prev.costData,
+                            laborBudget: e.target.value ? parseFloat(e.target.value) : undefined
+                          }
+                        }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="equipmentBudget">Equipment Budget ($)</Label>
+                      <Input
+                        id="equipmentBudget"
+                        type="number"
+                        placeholder="0"
+                        value={siteMeasurements.costData?.equipmentBudget || ''}
+                        onChange={(e) => setSiteMeasurements(prev => ({
+                          ...prev,
+                          costData: {
+                            ...prev.costData,
+                            equipmentBudget: e.target.value ? parseFloat(e.target.value) : undefined
+                          }
+                        }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="totalBudget">Total Project Budget ($)</Label>
+                      <Input
+                        id="totalBudget"
+                        type="number"
+                        placeholder="0"
+                        value={siteMeasurements.costData?.totalProjectBudget || ''}
+                        onChange={(e) => setSiteMeasurements(prev => ({
+                          ...prev,
+                          costData: {
+                            ...prev.costData,
+                            totalProjectBudget: e.target.value ? parseFloat(e.target.value) : undefined
+                          }
+                        }))}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="costSource">Cost Data Source</Label>
+                    <Input
+                      id="costSource"
+                      placeholder="e.g., Local contractor quote, vendor pricing, historical data"
+                      value={siteMeasurements.costData?.costSource || ''}
+                      onChange={(e) => setSiteMeasurements(prev => ({
+                        ...prev,
+                        costData: {
+                          ...prev.costData,
+                          costSource: e.target.value
+                        }
+                      }))}
+                    />
+                  </div>
+                </div>
+
                 {/* Buttons */}
                 <div className="flex gap-3 pt-4">
                   <Button
@@ -665,6 +766,30 @@ export function WorkbenchPanel({
     parts.push(`Soil type: ${siteMeasurements.soilType} (Hydrologic Soil Group)`);
     parts.push(`Design storm: ${siteMeasurements.stormFrequency}`);
     parts.push(`Location: ${siteMeasurements.location?.replace(/_/g, ' ')}`);
+    
+    // Add cost data if provided
+    if (siteMeasurements.costData) {
+      const costParts = [];
+      if (siteMeasurements.costData.totalProjectBudget) {
+        costParts.push(`Total project budget: $${siteMeasurements.costData.totalProjectBudget.toLocaleString()}`);
+      }
+      if (siteMeasurements.costData.materialBudget) {
+        costParts.push(`Material budget: $${siteMeasurements.costData.materialBudget.toLocaleString()}`);
+      }
+      if (siteMeasurements.costData.laborBudget) {
+        costParts.push(`Labor budget: $${siteMeasurements.costData.laborBudget.toLocaleString()}`);
+      }
+      if (siteMeasurements.costData.equipmentBudget) {
+        costParts.push(`Equipment budget: $${siteMeasurements.costData.equipmentBudget.toLocaleString()}`);
+      }
+      if (siteMeasurements.costData.costSource) {
+        costParts.push(`Cost data source: ${siteMeasurements.costData.costSource}`);
+      }
+      
+      if (costParts.length > 0) {
+        parts.push(`**USER-PROVIDED COST DATA:**\n${costParts.join('\n')}`);
+      }
+    }
     
     return `**SITE MEASUREMENTS FOR ENGINEERING CALCULATIONS:**\n${parts.join('\n')}`;
   }
