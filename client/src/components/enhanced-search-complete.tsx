@@ -54,12 +54,16 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
     enabled: debouncedQuery.length >= 2 && searchMode === 'local',
   });
 
-  // Claude 4 Enhanced Web Search
+  // Claude 4 Enhanced Web Search with timeout
   const performWebSearch = useCallback(async () => {
     if (!debouncedQuery || debouncedQuery.length < 2) return;
     
     setIsSearching(true);
     try {
+      // Add 10-second timeout to prevent long waits
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
       const response = await fetch('/api/search/web-enhanced', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -68,8 +72,11 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
           useAI: true,
           contextual: true,
           claude4: true
-        })
+        }),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       if (response.ok) {
         const data = await response.json();
@@ -85,20 +92,28 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
         setWebResults(formattedResults);
         setAiInsights(data.analysis || 'Claude 4 enhanced web search completed');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Web search error:', error);
-      setAiInsights('Claude 4 web search temporarily unavailable');
+      if (error?.name === 'AbortError') {
+        setAiInsights('Search timeout - please try a more specific query');
+      } else {
+        setAiInsights('Claude 4 web search temporarily unavailable');
+      }
     } finally {
       setIsSearching(false);
     }
   }, [debouncedQuery]);
 
-  // Claude 4 AI Enhanced Search
+  // Claude 4 AI Enhanced Search with timeout
   const performAISearch = useCallback(async () => {
     if (!debouncedQuery || debouncedQuery.length < 2) return;
     
     setIsSearching(true);
     try {
+      // Add 12-second timeout for AI search
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      
       const response = await fetch('/api/search/claude4', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -108,17 +123,24 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
           includeWeb: true,
           includeContext: true,
           useThinking: true
-        })
+        }),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       if (response.ok) {
         const data = await response.json();
         setResults(data.results || []);
         setAiInsights(data.insights || 'Claude 4 enhanced search completed');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI search error:', error);
-      setAiInsights('Claude 4 AI search temporarily unavailable');
+      if (error?.name === 'AbortError') {
+        setAiInsights('Analysis timeout - please try a shorter or more specific query');
+      } else {
+        setAiInsights('Claude 4 AI search temporarily unavailable');
+      }
     } finally {
       setIsSearching(false);
     }
