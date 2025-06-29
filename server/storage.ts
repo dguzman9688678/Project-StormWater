@@ -353,12 +353,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [aiAnalysis] = await db
         .insert(aiAnalyses)
-        .values({
-          documentId: analysis.documentId,
-          query: analysis.query,
-          analysis: analysis.analysis,
-          insights: analysis.insights || []
-        })
+        .values(analysis)
         .returning();
       return aiAnalysis;
     } catch (error) {

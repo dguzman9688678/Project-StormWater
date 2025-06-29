@@ -11,6 +11,7 @@ import { DocumentGenerator } from "./services/document-generator";
 import { ChatService } from "./services/chat-service";
 import { WebSearchService } from "./services/web-search-service";
 import { PythonInterpreter } from "./services/python-interpreter";
+import archiver from "archiver";
 
 import { insertDocumentSchema, insertAiAnalysisSchema } from "@shared/schema";
 
@@ -956,75 +957,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Download document in various formats
-  app.get("/api/documents/:id/download", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { format = 'txt', includeRecommendations = 'false', includeAnalyses = 'false' } = req.query;
-      
-      const documentId = parseInt(id);
-      if (isNaN(documentId)) {
-        return res.status(400).json({ error: "Invalid document ID" });
-      }
-
-      const document = await storage.getDocument(documentId);
-      if (!document) {
-        return res.status(404).json({ error: "Document not found" });
-      }
-
-      // Get related data if requested
-      let recommendations = undefined;
-      let analyses = undefined;
-
-      if (includeRecommendations === 'true') {
-        const allRecommendations = await storage.getAllRecommendations();
-        recommendations = allRecommendations.filter(rec => 
-          rec.sourceDocumentId === documentId || rec.category === document.category
-        );
-      }
-
-      if (includeAnalyses === 'true') {
-        analyses = await storage.getAnalysesByDocument(documentId);
-      }
-
-      // Export document
-      const buffer = await documentExporter.exportDocument(
-        document,
-        format as string,
-        recommendations,
-        analyses
-      );
-
-      // Set appropriate headers
-      const mimeTypes: Record<string, string> = {
-        txt: 'text/plain',
-        csv: 'text/csv',
-        xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        json: 'application/json',
-        zip: 'application/zip'
-      };
-
-      const extensions: Record<string, string> = {
-        txt: 'txt',
-        csv: 'csv',
-        xlsx: 'xlsx',
-        json: 'json',
-        zip: 'zip'
-      };
-
-      const mimeType = mimeTypes[format as string] || 'application/octet-stream';
-      const extension = extensions[format as string] || 'bin';
-      const filename = `${document.originalName.replace(/\.[^/.]+$/, '')}.${extension}`;
-
-      res.setHeader('Content-Type', mimeType);
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.send(buffer);
-
-    } catch (error) {
-      console.error('Download error:', error);
-      res.status(500).json({ error: "Failed to download document" });
-    }
-  });
+  // Download document in various formats (removed duplicate - kept the simpler version below)
 
   // Generate new document
   app.post("/api/documents/generate", async (req, res) => {
@@ -1334,7 +1267,6 @@ ${docType === 'sop' ? 'Standard Operating Procedure: Include step-by-step proced
         return res.status(400).json({ error: "File IDs are required" });
       }
 
-      const archiver = require('archiver');
       const archive = archiver('zip', { zlib: { level: 9 } });
 
       // Set response headers for ZIP download
