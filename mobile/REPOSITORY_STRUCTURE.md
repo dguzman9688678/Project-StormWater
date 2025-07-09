@@ -5,7 +5,7 @@
 
 ## Clean Repository Organization
 
-### 📁 Core Application Structure
+###  Core Application Structure
 ```
 stormwater-ai/
 ├── client/                     # React frontend application
@@ -24,7 +24,7 @@ stormwater-ai/
 └── mobile/                     # Mobile application (future)
 ```
 
-### 📚 Documentation Structure
+###  Documentation Structure
 ```
 docs/
 ├── README.md                           # Master documentation index
@@ -35,7 +35,7 @@ docs/
 └── specifications/                     # Project specifications
 ```
 
-### 🛠️ Development Tools
+###  Development Tools
 ```
 scripts/
 ├── python/                            # Python utilities
@@ -45,7 +45,7 @@ scripts/
 └── utilities/                         # Other development scripts
 ```
 
-### 📦 Build & Configuration
+###  Build & Configuration
 ```
 # Build Configuration (Root Level - Required)
 ├── package.json                # Node.js dependencies and scripts
@@ -60,21 +60,21 @@ scripts/
 └── uv.lock                    # Python dependency lock
 ```
 
-### 🗄️ Data & Storage
+###  Data & Storage
 ```
 uploads/                       # Temporary file uploads
 dist/                         # Built application files
 node_modules/                 # Node.js dependencies
 ```
 
-### 📋 Project Management
+###  Project Management
 ```
 ├── replit.md                 # Project overview and architecture
 ├── REPOSITORY_STRUCTURE.md   # This file
 └── .replit                   # Replit configuration
 ```
 
-### 🗃️ Archive Structure
+###  Archive Structure
 ```
 archive/
 ├── project-history/          # Historical project files and notes
@@ -84,19 +84,19 @@ archive/
 
 ## File Organization Principles
 
-### ✅ What Stays in Root Directory
+###  What Stays in Root Directory
 - **Build Configuration**: All config files required by build tools
 - **Package Management**: package.json, package-lock.json, uv.lock
 - **Project Documentation**: replit.md, README files
 - **Essential Scripts**: Core build and development scripts
 
-### 📁 What Gets Organized into Folders
+###  What Gets Organized into Folders
 - **Documentation**: Comprehensive docs/ structure with PDFs and markdown
 - **Development Tools**: scripts/ directory for utilities and generators
 - **Historical Files**: archive/ for old specifications and project history
 - **Generated Files**: dist/ and uploads/ for build artifacts and temporary files
 
-### 🚫 What Gets Archived
+###  What Gets Archived
 - **Old Specifications**: Historical requirement documents
 - **Development Screenshots**: UI mockups and progress images
 - **Project History**: Development notes and iteration files
@@ -104,25 +104,25 @@ archive/
 
 ## Repository Benefits
 
-### 🎯 Clean Structure
+###  Clean Structure
 - Clear separation between application code and documentation
 - Build configuration easily accessible in root
 - Development tools organized and discoverable
 - Historical files archived but preserved
 
-### 📚 Professional Documentation
+###  Professional Documentation
 - Complete PDF documentation package
 - Organized by category (technical, user guides, analysis)
 - Master index for easy navigation
 - Both source (markdown) and distribution (PDF) formats
 
-### 🛠️ Developer Experience
+###  Developer Experience
 - Essential configuration files in expected locations
 - Build system works without modification
 - Development scripts organized and documented
 - Clear separation of concerns
 
-### 📦 Deployment Ready
+###  Deployment Ready
 - Clean repository structure for version control
 - No loose files cluttering the root directory
 - Professional appearance for stakeholders
@@ -130,19 +130,19 @@ archive/
 
 ## Maintenance Guidelines
 
-### 📝 Documentation Updates
+###  Documentation Updates
 - Update both markdown and PDF versions when making changes
 - Regenerate PDFs using `python scripts/python/simple_pdf_generator.py`
 - Keep REPOSITORY_STRUCTURE.md current with any structural changes
 - Update replit.md with architectural decisions
 
-### 🔧 File Organization
+###  File Organization
 - New development files go in appropriate scripts/ subdirectories
 - Documentation files belong in docs/ with proper categorization
 - Archive historical files rather than deleting them
 - Maintain clean root directory with only essential files
 
-### 🚀 Version Control Best Practices
+###  Version Control Best Practices
 - Stage files by logical groupings (features, docs, config)
 - Use clear commit messages describing organizational changes
 - Tag major organizational improvements
