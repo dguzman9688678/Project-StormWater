@@ -263,6 +263,9 @@ export function EnhancedSearch({ onResultSelect, className = "" }: EnhancedSearc
           <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
         )}
       </div>
+
+      {/* Search Mode Selector */}
+      <div className="mt-2 flex justify-end">
         <Select value={searchMode} onValueChange={(value: 'local' | 'web' | 'ai') => setSearchMode(value)}>
           <SelectTrigger className="w-32">
             <Filter className="w-4 h-4 mr-2" />
