@@ -1,0 +1,66 @@
+{
+  "name": "stormwater-ai-enterprise",
+  "version": "1.0.0",
+  "description": "Complete Enterprise-Grade StormWaterAI System by Daniel Guzman",
+  "author": "Daniel Guzman",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend", 
+    "mobile",
+    "ai-services",
+    "database",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "npm run dev:backend & npm run dev:frontend",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:mobile": "cd mobile && npm run dev",
+    "build": "npm run build:shared && npm run build:backend && npm run build:frontend && npm run build:mobile",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build", 
+    "build:mobile": "cd mobile && npm run build",
+    "build:shared": "cd shared && npm run build",
+    "test": "npm run test:backend && npm run test:frontend && npm run test:mobile",
+    "test:frontend": "cd frontend && npm run test",
+    "test:backend": "cd backend && npm run test",
+    "test:mobile": "cd mobile && npm run test",
+    "test:ai": "cd ai-services && npm run test",
+    "lint": "npm run lint:frontend && npm run lint:backend",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && npm run lint",
+    "db:migrate": "cd database && npm run migrate",
+    "db:seed": "cd database && npm run seed",
+    "db:reset": "cd database && npm run reset",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "deploy": "npm run build && npm run docker:build",
+    "start": "npm run start:backend",
+    "start:backend": "cd backend && npm run start"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.11",
+    "typescript": "^5.6.3",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "stormwater",
+    "ai",
+    "enterprise",
+    "environmental",
+    "engineering",
+    "typescript",
+    "react",
+    "express",
+    "postgresql"
+  ]
+}
